@@ -12,6 +12,9 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SweepstarProfileController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PaymentVerificationController;
+use App\Http\Controllers\PointTransactionController;
+use App\Http\Controllers\SettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,6 +103,14 @@ Route::middleware(['auth:sanctum', 'active_user'])->group(function () {
         Route::get('/admin/applications', [SweepstarProfileController::class, 'pendingApplications']);
         Route::post('/admin/applications/{id}/approve', [SweepstarProfileController::class, 'approve']);
         Route::delete('/admin/applications/{id}/reject', [SweepstarProfileController::class, 'reject']);
+
+        Route::get('/admin/payment-verifications', [PaymentVerificationController::class, 'index']);
+        Route::post('/admin/payment-verifications/{id}/approve', [PaymentVerificationController::class, 'approve']);
+        Route::post('/admin/payment-verifications/{id}/reject', [PaymentVerificationController::class, 'reject']);
+
+        // Settings (admin)
+        Route::get('/admin/settings', [SettingController::class, 'index']);
+        Route::put('/admin/settings', [SettingController::class, 'update']);
     });
 
 
@@ -118,6 +129,9 @@ Route::middleware(['auth:sanctum', 'active_user'])->group(function () {
         // Mission Actions
         Route::post('/bookings/{id}/accept', [BookingController::class, 'acceptMission']);
         Route::post('/bookings/{id}/complete', [BookingController::class, 'completeMission']);
+        Route::post('/sweepstar/request-payment-code', [PaymentVerificationController::class, 'requestCode']);
+        Route::post('/sweepstar/submit-payment', [PaymentVerificationController::class, 'submit']);
+        Route::get('/sweepstar/point-transactions', [PointTransactionController::class, 'index']);
     });
 
 });

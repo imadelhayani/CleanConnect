@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Service;
 use App\Models\Address;
+use App\Models\PointTransaction;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -322,28 +324,64 @@ public function missionsHistory(Request $request)
 }
 
 
-    public function acceptMission(Request $request, $id)
-    {
-        return DB::transaction(function () use ($request, $id) {
-            $booking = Booking::lockForUpdate()->findOrFail($id);
 
-            if ($booking->sweepstar_id) {
-                return response()->json(['message' => 'Job already taken.'], 409);
-            }
 
-            $booking->update([
-                'sweepstar_id' => $request->user()->id,
-                'status' => 'confirmed'
+public function acceptMission(Request $request, $id)
+{
+    return DB::transaction(function () use ($request, $id) {
+        $booking = Booking::lockForUpdate()->findOrFail($id);
+
+        if ($booking->sweepstar_id) {
+            return response()->json(['message' => 'Job already taken.'], 409);
+        }
+
+        $sweepstar = $request->user();
+        $profile = $sweepstar->sweepstarProfile;
+
+        if (!$profile) {
+            return response()->json(['message' => 'Sweepstar profile not found.'], 404);
+        }
+
+        // Get current percentage from settings
+        $percentage = Setting::where('key', 'booking_acceptance_percentage')->value('value') ?? 10;
+        $requiredPoints = $booking->total_price * ($percentage / 100);
+
+        if ($profile->points_balance < $requiredPoints) {
+            return response()->json([
+                'message' => "Insufficient points. You need {$requiredPoints} points (balance: {$profile->points_balance})."
+            ], 403);
+        }
+
+        // Deduct points
+        $profile->points_balance -= $requiredPoints;
+        $profile->save();
+
+        // Record transaction (optional)
+        if (class_exists('App\Models\PointTransaction')) {
+            PointTransaction::create([
+                'sweepstar_id' => $sweepstar->id,
+                'type' => 'debit',
+                'amount' => $requiredPoints,
+                'description' => 'Points deducted for accepting booking #' . $booking->id,
+                'reference_type' => Booking::class,
+                'reference_id' => $booking->id,
             ]);
+        }
 
-            $booking->user->notify(new BookingStatusUpdated(
-                "Your booking has been accepted by " . $request->user()->name,
-                $booking, 'booking_accepted'
-            ));
+        $booking->update([
+            'sweepstar_id' => $sweepstar->id,
+            'status' => 'confirmed'
+        ]);
 
-            return response()->json(['message' => 'Job accepted!']);
-        });
-    }
+        // Notify client
+        $booking->user->notify(new BookingStatusUpdated(
+            "Your booking has been accepted by " . $sweepstar->name,
+            $booking, 'booking_accepted'
+        ));
+
+        return response()->json(['message' => 'Job accepted!']);
+    });
+}
 
     public function completeMission(Request $request, $id)
     {

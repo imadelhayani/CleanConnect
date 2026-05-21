@@ -13,22 +13,25 @@ class SweepstarProfile extends Model
 
     protected $table = 'sweepstar_profiles';
 
-    protected $fillable = [
-        'user_id',
-        'bio',
-        'id_number',
-        'hourly_rate',
-        'is_verified',
-        'total_jobs_completed',
-        'is_available',
-    ];
 
-    protected $casts = [
-        'is_verified' => 'boolean',
-        'is_available' => 'boolean',
-        'hourly_rate' => 'decimal:2',
-        'total_jobs_completed' => 'integer',
-    ];
+protected $fillable = [
+    'user_id',
+    'bio',
+    'id_number',
+    'hourly_rate',
+    'is_verified',
+    'total_jobs_completed',
+    'is_available',
+    'points_balance',
+];
+
+protected $casts = [
+    'is_verified' => 'boolean',
+    'is_available' => 'boolean',
+    'hourly_rate' => 'decimal:2',
+    'total_jobs_completed' => 'integer',
+    'points_balance' => 'decimal:2',
+];
 
     // Link back to the User (Login account)
     public function user()

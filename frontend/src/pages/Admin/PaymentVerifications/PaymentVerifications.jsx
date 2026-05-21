@@ -1,0 +1,344 @@
+import React, { useState } from "react";
+import {
+    usePaymentVerifications,
+    useApprovePayment,
+    useRejectPayment,
+} from "@/Hooks/usePayments";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, CheckCircle, XCircle, Eye } from "lucide-react";
+import { toast } from "sonner";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/utils/avatarHelper";
+import { Label } from "@radix-ui/react-dropdown-menu";
+
+export default function PaymentVerifications() {
+    const [activeTab, setActiveTab] = useState("pending");
+    const [selectedPayment, setSelectedPayment] = useState(null);
+    const [adminNotes, setAdminNotes] = useState("");
+    const [actionType, setActionType] = useState(null); // 'approve' or 'reject'
+
+    const {
+        data: payments,
+        isLoading,
+        refetch,
+    } = usePaymentVerifications(activeTab);
+    const approveMutation = useApprovePayment();
+    const rejectMutation = useRejectPayment();
+
+    const handleApprove = (payment) => {
+        setSelectedPayment(payment);
+        setActionType("approve");
+        setAdminNotes("");
+    };
+
+    const handleReject = (payment) => {
+        setSelectedPayment(payment);
+        setActionType("reject");
+        setAdminNotes("");
+    };
+
+    const confirmAction = async () => {
+        if (!selectedPayment) return;
+        try {
+            if (actionType === "approve") {
+                await approveMutation.mutateAsync({
+                    id: selectedPayment.id,
+                    adminNotes,
+                });
+                toast.success("Payment approved. Points credited.");
+            } else {
+                await rejectMutation.mutateAsync({
+                    id: selectedPayment.id,
+                    adminNotes,
+                });
+                toast.success("Payment rejected.");
+            }
+            setSelectedPayment(null);
+            refetch();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Action failed");
+        }
+    };
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case "pending":
+                return (
+                    <Badge
+                        variant="outline"
+                        className="bg-yellow-100 text-yellow-800"
+                    >
+                        Pending
+                    </Badge>
+                );
+            case "approved":
+                return (
+                    <Badge
+                        variant="outline"
+                        className="bg-green-100 text-green-800"
+                    >
+                        Approved
+                    </Badge>
+                );
+            case "rejected":
+                return (
+                    <Badge
+                        variant="outline"
+                        className="bg-red-100 text-red-800"
+                    >
+                        Rejected
+                    </Badge>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="container max-w-6xl py-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Payment Verifications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className="mb-4">
+                            <TabsTrigger value="pending">Pending</TabsTrigger>
+                            <TabsTrigger value="approved">Approved</TabsTrigger>
+                            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value={activeTab}>
+                            {isLoading ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </div>
+                            ) : payments?.length === 0 ? (
+                                <p className="text-center text-muted-foreground py-8">
+                                    No {activeTab} payments.
+                                </p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {payments?.map((payment) => (
+                                        <div
+                                            key={payment.id}
+                                            className="border rounded-lg p-4 space-y-3"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage
+                                                            src={
+                                                                payment
+                                                                    .sweepstar
+                                                                    ?.avatar_url
+                                                            }
+                                                        />
+                                                        <AvatarFallback>
+                                                            {getInitials(
+                                                                payment
+                                                                    .sweepstar
+                                                                    ?.name,
+                                                            )}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            {
+                                                                payment
+                                                                    .sweepstar
+                                                                    ?.name
+                                                            }
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {
+                                                                payment
+                                                                    .sweepstar
+                                                                    ?.email
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold text-lg">
+                                                        {payment.amount} points
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Code: {payment.code}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                <div>
+                                                    <span className="text-muted-foreground">
+                                                        Sender Account:
+                                                    </span>{" "}
+                                                    {
+                                                        payment.sender_account_number
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <span className="text-muted-foreground">
+                                                        Sender Name:
+                                                    </span>{" "}
+                                                    {
+                                                        payment.sender_account_name
+                                                    }
+                                                </div>
+                                            </div>
+                                            {payment.screenshot_path && (
+                                                <div>
+                                                    <a
+                                                        href={
+                                                            payment.screenshot_path
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                                                    >
+                                                        <Eye className="h-4 w-4" />{" "}
+                                                        View Screenshot
+                                                    </a>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    {getStatusBadge(
+                                                        payment.status,
+                                                    )}
+                                                </div>
+                                                {payment.status ===
+                                                    "pending" && (
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="text-green-600 border-green-200 hover:bg-green-50"
+                                                            onClick={() =>
+                                                                handleApprove(
+                                                                    payment,
+                                                                )
+                                                            }
+                                                        >
+                                                            <CheckCircle className="mr-1 h-4 w-4" />{" "}
+                                                            Approve
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="text-red-600 border-red-200 hover:bg-red-50"
+                                                            onClick={() =>
+                                                                handleReject(
+                                                                    payment,
+                                                                )
+                                                            }
+                                                        >
+                                                            <XCircle className="mr-1 h-4 w-4" />{" "}
+                                                            Reject
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {payment.admin_notes && (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Notes:{" "}
+                                                        {payment.admin_notes}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+
+            {/* Confirmation Dialog */}
+            <Dialog
+                open={!!selectedPayment}
+                onOpenChange={() => setSelectedPayment(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {actionType === "approve"
+                                ? "Approve Payment"
+                                : "Reject Payment"}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {actionType === "approve"
+                                ? "This will credit points to the sweepstar's account."
+                                : "This will reject the payment request."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div>
+                            <p className="text-sm font-medium">
+                                Code: {selectedPayment?.code}
+                            </p>
+                            <p className="text-sm font-medium">
+                                Amount: {selectedPayment?.amount}
+                            </p>
+                        </div>
+                        <div>
+                            <Label htmlFor="notes">
+                                Admin Notes (optional)
+                            </Label>
+                            <Textarea
+                                id="notes"
+                                value={adminNotes}
+                                onChange={(e) => setAdminNotes(e.target.value)}
+                                placeholder="Add any notes..."
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setSelectedPayment(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={confirmAction}
+                            disabled={
+                                approveMutation.isPending ||
+                                rejectMutation.isPending
+                            }
+                            variant={
+                                actionType === "approve"
+                                    ? "default"
+                                    : "destructive"
+                            }
+                        >
+                            {approveMutation.isPending ||
+                            rejectMutation.isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                                    Processing...
+                                </>
+                            ) : actionType === "approve" ? (
+                                "Approve"
+                            ) : (
+                                "Reject"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

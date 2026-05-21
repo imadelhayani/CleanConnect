@@ -43,9 +43,9 @@ class RegisteredUserController extends Controller
                 $user
             ));
         Auth::login($user);
-        $request->session()->invalidate();
+        // $request->session()->invalidate();
 
-        $request->session()->regenerateToken();
+        // $request->session()->regenerateToken();
 
         return response()->noContent();
     }

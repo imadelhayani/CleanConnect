@@ -10,6 +10,7 @@ import {
     Home,
     Mail,
     ChevronDown,
+    Coins,
 } from "lucide-react";
 
 import { ModeButton } from "@/components/ui/Button-mode";
@@ -204,6 +205,18 @@ export default function NavBar() {
                                         >
                                             {user?.role || "User"}
                                         </span>
+
+                                        {user?.role === "sweepstar" && (
+                                            <div className="mt-2 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1">
+                                                <span className="text-xs font-medium">
+                                                    Points:
+                                                </span>
+                                                <span className="text-sm font-bold text-primary">
+                                                    {user?.sweepstarProfile
+                                                        ?.points_balance || 0}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
@@ -217,6 +230,17 @@ export default function NavBar() {
                                     <LayoutDashboard className="h-4 w-4" />
                                     <span>Dashboard</span>
                                 </DropdownMenuItem>
+                                {user?.role === "sweepstar" && (
+                                    <DropdownMenuItem
+                                        onClick={() =>
+                                            navigate("/dashboard/top-up-points")
+                                        }
+                                        className="cursor-pointer gap-2"
+                                    >
+                                        <Coins className="h-4 w-4" />
+                                        <span>Top Up Points</span>
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     onClick={handleLogout}

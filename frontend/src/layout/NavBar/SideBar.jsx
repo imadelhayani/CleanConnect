@@ -16,6 +16,9 @@ import {
     BrushCleaning,
     MapPin,
     ListChecks,
+    Wallet,
+    Coins,
+    History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRoleStyles } from "@/utils/roleStyles";
@@ -53,6 +56,16 @@ export default function Sidebar() {
                 label: "Sweepstar Requests",
                 icon: Settings,
             },
+            {
+                id: "paymentVerifications",
+                label: "Payment Verifications",
+                icon: Wallet,
+            },
+            {
+                id: "settings",
+                label: "Settings",
+                icon: Settings,
+            },
         ],
         sweepstar: [
             { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -75,6 +88,16 @@ export default function Sidebar() {
                 id: "missionsHistory",
                 label: "Missions History",
                 icon: Briefcase,
+            },
+            {
+                id: "topUpPoints",
+                label: "Top Up Points",
+                icon: Coins,
+            },
+            {
+                id: "pointTransactions",
+                label: "Point Transactions",
+                icon: History,
             },
         ],
         client: [
@@ -110,11 +133,15 @@ export default function Sidebar() {
         bookingsList: "/dashboard/bookings_list",
         services: "/dashboard/services",
         sweepstarRequests: "/dashboard/sweepstar_requests",
+        paymentVerifications: "/dashboard/payment-verifications",
+        settings: "/dashboard/settings",
 
         // sweepstar
         availableMissions: "/dashboard/available_missions",
         currentMissions: "/dashboard/current_missions",
         missionsHistory: "/dashboard/missions_history",
+        topUpPoints: "/dashboard/top-up-points",
+        pointTransactions: "/dashboard/point-transactions",
 
         // client
         bookService: "/dashboard/booking_service",
@@ -198,7 +225,7 @@ export default function Sidebar() {
                     </p>
                     <div
                         className={`mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${getRoleStyles(
-                            user?.role
+                            user?.role,
                         )}`}
                     >
                         {role}

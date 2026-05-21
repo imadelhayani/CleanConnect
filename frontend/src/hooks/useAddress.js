@@ -23,7 +23,7 @@ export const useAddress = () => {
 
             // Logic from your old context: handle different response structures
             // We return ONLY the data we need (the array of addresses)
-            return response.data.addresses || response.data;
+            return response.addresses || response;
         },
 
         // Optional: Keep data fresh for 5 minutes, but refetch if window gains focus

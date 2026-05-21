@@ -36,6 +36,10 @@ import MissionsHistory from "@/pages/Sweepstar/MissionsHistory/MissionsHistory";
 import AvailableMissions from "@/pages/Sweepstar/AvailableMissions/AvailableMissions";
 import CurrentMissions from "@/pages/Sweepstar/CurrentMissions/CurrentMissions";
 import NotificationsPage from "@/pages/SharedComponents/NotificationsPage";
+import PointTransactions from "@/pages/Sweepstar/PointTransactions/PointTransactions";
+import TopUpPoints from "@/pages/Sweepstar/TopUpPoints/TopUpPoints";
+import PaymentVerifications from "@/pages/Admin/PaymentVerifications/PaymentVerifications";
+import Settings from "@/pages/Admin/Settings/Settings";
 
 // GuestOnly: redirect logged-in users away from login/signup
 const GuestOnly = ({ children }) => {
@@ -110,6 +114,14 @@ export const AppRouter = createBrowserRouter([
                         path: "dashboard/sweepstar_requests",
                         element: <ApplicationManager />,
                     },
+                    {
+                        path: "dashboard/payment-verifications",
+                        element: <PaymentVerifications />,
+                    },
+                    {
+                        path: "dashboard/settings",
+                        element: <Settings />,
+                    },
                 ],
             },
 
@@ -149,6 +161,14 @@ export const AppRouter = createBrowserRouter([
                     {
                         path: "dashboard/missions_history",
                         element: <MissionsHistory />,
+                    },
+                    {
+                        path: "dashboard/top-up-points",
+                        element: <TopUpPoints />,
+                    },
+                    {
+                        path: "dashboard/point-transactions",
+                        element: <PointTransactions />,
                     },
                 ],
             },
