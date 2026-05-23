@@ -20,7 +20,7 @@ import AddAddressForm from "./components/AddAddressForm";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 export default function AddressManager() {
-    const { addresses, loading, error, deleteAddress } = useAddress();
+    const { addresses = [], loading, error, deleteAddress } = useAddress();
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
