@@ -212,8 +212,7 @@ export default function NavBar() {
                                                     Points:
                                                 </span>
                                                 <span className="text-sm font-bold text-primary">
-                                                    {user?.sweepstarProfile
-                                                        ?.points_balance || 0}
+                                                    {user?.points_balance || 0}
                                                 </span>
                                             </div>
                                         )}

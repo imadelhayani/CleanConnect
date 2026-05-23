@@ -48,7 +48,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-    protected $appends = ['avatar_url'];
+    protected $appends = ['avatar_url', 'points_balance'];
 
     public function getAvatarUrlAttribute()
 {
@@ -99,6 +99,11 @@ public function reviewsReceived()
     public function isAdmin()
     {
         return $this->role === 'admin';
+    }
+
+    public function getPointsBalanceAttribute()
+    {
+        return $this->sweepstarProfile ? $this->sweepstarProfile->points_balance : 0;
     }
 
 }

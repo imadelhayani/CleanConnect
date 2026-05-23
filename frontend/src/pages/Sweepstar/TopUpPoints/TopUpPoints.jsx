@@ -102,7 +102,7 @@ export default function TopUpPoints() {
                     <CardDescription>
                         Your current balance:{" "}
                         <span className="font-bold text-primary">
-                            {user?.sweepstarProfile?.points_balance || 0} points
+                            {user?.points_balance || 0} points
                         </span>
                     </CardDescription>
                 </CardHeader>
