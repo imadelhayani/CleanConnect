@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const settingsSchema = z.object({
@@ -47,7 +47,7 @@ export default function Settings() {
         try {
             await updateMutation.mutateAsync(data);
             toast.success("Settings updated successfully");
-            reset(data); // reset dirty state
+            reset(data);
         } catch (error) {
             toast.error(error.response?.data?.message || "Update failed");
         }
@@ -55,22 +55,45 @@ export default function Settings() {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
     }
 
     return (
-        <div className="container max-w-2xl py-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>System Settings</CardTitle>
-                    <CardDescription>
+        <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent p-8 md:p-12">
+                <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/15 rounded-full blur-3xl dark:bg-primary/10" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl dark:bg-primary/5" />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                        <SettingsIcon className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">
+                            Configuration
+                        </span>
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                        System Settings
+                    </h1>
+                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                         Configure global settings for the platform.
+                    </p>
+                </div>
+            </div>
+
+            <Card className="rounded-xl border-border/60 bg-background/50 backdrop-blur-sm shadow-lg max-w-2xl mx-auto">
+                <CardHeader className="border-b border-border/60 pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                        <SettingsIcon className="w-5 h-5 text-primary" />
+                        Platform Configuration
+                    </CardTitle>
+                    <CardDescription>
+                        Adjust system parameters and payment details
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                     <form
                         onSubmit={handleSubmit(onSubmit)}
                         className="space-y-6"
@@ -100,7 +123,6 @@ export default function Settings() {
                                 have in points to accept a job.
                             </p>
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="admin_bank_account">
                                 Admin Bank Account Number
@@ -115,7 +137,6 @@ export default function Settings() {
                                 </p>
                             )}
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="admin_bank_holder">
                                 Admin Bank Account Holder Name
@@ -130,22 +151,19 @@ export default function Settings() {
                                 </p>
                             )}
                         </div>
-
                         <Button
                             type="submit"
                             disabled={!isDirty || updateMutation.isPending}
+                            className="w-full gap-2"
                         >
                             {updateMutation.isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                                    Saving...
-                                </>
+                                <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                                <>
-                                    <Save className="mr-2 h-4 w-4" /> Save
-                                    Changes
-                                </>
+                                <Save className="h-4 w-4" />
                             )}
+                            {updateMutation.isPending
+                                ? "Saving..."
+                                : "Save Changes"}
                         </Button>
                     </form>
                 </CardContent>

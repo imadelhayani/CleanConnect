@@ -1,4 +1,3 @@
-// src/pages/booking/Booking.jsx
 import React, { useState, useMemo } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { useAddress } from "@/Hooks/useAddress";
@@ -27,10 +26,10 @@ export default function Booking() {
 
     if (loadingServices || loadingAddresses) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground text-lg font-medium">
+            <div className="flex h-[60vh] items-center justify-center">
+                <div className="text-center space-y-4">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                    <p className="text-muted-foreground text-lg">
                         Preparing your booking experience...
                     </p>
                 </div>
@@ -52,9 +51,7 @@ export default function Booking() {
             };
 
             const response = await createBookingMutation(payload);
-            if (response) {
-                setIsSuccess(true);
-            }
+            if (response) setIsSuccess(true);
         } catch (error) {
             const serverError =
                 error.response?.data?.message || "Booking failed.";
@@ -63,35 +60,37 @@ export default function Booking() {
         }
     };
 
-    if (isSuccess) {
-        return <SuccessBookingModal />;
-    }
+    if (isSuccess) return <SuccessBookingModal />;
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 py-12 px-6">
-            <div className="max-w-3xl mx-auto">
-                <div className="mb-10 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-3 mb-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                            <Sparkles className="w-6 h-6 text-primary" />
-                        </div>
-                        <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                            Book a Service
-                        </h1>
+        <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent p-8 md:p-12">
+                <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/15 rounded-full blur-3xl dark:bg-primary/10" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl dark:bg-primary/5" />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">New Request</span>
                     </div>
-                    <p className="text-muted-foreground text-lg">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                        Book a Service
+                    </h1>
+                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                         Customize your plan, choose a location, and let us
                         handle the rest.
                     </p>
                 </div>
+            </div>
 
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    {submitError && (
-                        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm font-medium">
-                            {submitError}
-                        </div>
-                    )}
-
+            {/* Form Card */}
+            <div className="rounded-xl border-border/60 bg-background/50 backdrop-blur-sm shadow-lg">
+                {submitError && (
+                    <div className="p-4 bg-destructive/10 border-b border-destructive/20 text-destructive rounded-t-xl text-sm font-medium">
+                        {submitError}
+                    </div>
+                )}
+                <div className="p-6">
                     <BookingForm
                         services={services}
                         addresses={verifiedAddresses}

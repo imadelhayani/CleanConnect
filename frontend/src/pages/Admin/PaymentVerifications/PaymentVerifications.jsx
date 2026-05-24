@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, Eye } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Eye, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -27,7 +27,7 @@ export default function PaymentVerifications() {
     const [activeTab, setActiveTab] = useState("pending");
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [adminNotes, setAdminNotes] = useState("");
-    const [actionType, setActionType] = useState(null); // 'approve' or 'reject'
+    const [actionType, setActionType] = useState(null);
 
     const {
         data: payments,
@@ -42,29 +42,27 @@ export default function PaymentVerifications() {
         setActionType("approve");
         setAdminNotes("");
     };
-
     const handleReject = (payment) => {
         setSelectedPayment(payment);
         setActionType("reject");
         setAdminNotes("");
     };
-
     const confirmAction = async () => {
         if (!selectedPayment) return;
         try {
-            if (actionType === "approve") {
+            if (actionType === "approve")
                 await approveMutation.mutateAsync({
                     id: selectedPayment.id,
                     adminNotes,
                 });
-                toast.success("Payment approved. Points credited.");
-            } else {
+            else
                 await rejectMutation.mutateAsync({
                     id: selectedPayment.id,
                     adminNotes,
                 });
-                toast.success("Payment rejected.");
-            }
+            toast.success(
+                `Payment ${actionType === "approve" ? "approved" : "rejected"}.`,
+            );
             setSelectedPayment(null);
             refetch();
         } catch (error) {
@@ -106,26 +104,53 @@ export default function PaymentVerifications() {
         }
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+
     return (
-        <div className="container max-w-6xl py-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Payment Verifications</CardTitle>
+        <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent p-8 md:p-12">
+                <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/15 rounded-full blur-3xl dark:bg-primary/10" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl dark:bg-primary/5" />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                        <Wallet className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">
+                            Financial Review
+                        </span>
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                        Payment Verifications
+                    </h1>
+                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+                        Verify sweepstar top‑ups, approve or reject
+                        transactions.
+                    </p>
+                </div>
+            </div>
+
+            <Card className="rounded-xl border-border/60 bg-background/50 backdrop-blur-sm shadow-lg">
+                <CardHeader className="border-b border-border/60 pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-primary" />
+                        Verification Queue
+                    </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList className="mb-4">
                             <TabsTrigger value="pending">Pending</TabsTrigger>
                             <TabsTrigger value="approved">Approved</TabsTrigger>
                             <TabsTrigger value="rejected">Rejected</TabsTrigger>
                         </TabsList>
-
                         <TabsContent value={activeTab}>
-                            {isLoading ? (
-                                <div className="flex justify-center py-12">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                </div>
-                            ) : payments?.length === 0 ? (
+                            {payments?.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-8">
                                     No {activeTab} payments.
                                 </p>
@@ -266,7 +291,6 @@ export default function PaymentVerifications() {
                 </CardContent>
             </Card>
 
-            {/* Confirmation Dialog */}
             <Dialog
                 open={!!selectedPayment}
                 onOpenChange={() => setSelectedPayment(null)}
@@ -326,15 +350,9 @@ export default function PaymentVerifications() {
                         >
                             {approveMutation.isPending ||
                             rejectMutation.isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                                    Processing...
-                                </>
-                            ) : actionType === "approve" ? (
-                                "Approve"
-                            ) : (
-                                "Reject"
-                            )}
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : null}
+                            {actionType === "approve" ? "Approve" : "Reject"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

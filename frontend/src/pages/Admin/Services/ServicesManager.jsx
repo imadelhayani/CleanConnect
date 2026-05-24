@@ -1,20 +1,15 @@
 import React, { useState } from "react";
-import { Plus, LayoutGrid, Loader2 } from "lucide-react";
+import { LayoutGrid, Loader2 } from "lucide-react";
 import { useServices, useDeleteService } from "@/Hooks/useServices";
-
-// Components
 import ServiceStats from "./components/ServiceStats";
 import ServiceCard from "./components/ServiceCard";
-import ServiceDetailsModal from "./components/ServiceDetailsModal"; // New
-import ServiceUpdateModal from "./components/ServiceUpdateModal"; // New (Locked fields)
+import ServiceDetailsModal from "./components/ServiceDetailsModal";
+import ServiceUpdateModal from "./components/ServiceUpdateModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
-import { Button } from "@/components/ui/button";
 
 export default function ServiceManager() {
     const { data: services = [], isLoading } = useServices();
     const deleteMutation = useDeleteService();
-
-    // --- State Management ---
     const [selectedService, setSelectedService] = useState(null);
     const [modalState, setModalState] = useState({
         details: false,
@@ -22,53 +17,50 @@ export default function ServiceManager() {
         delete: false,
     });
 
-    // --- Handlers ---
-
-    // 1. Open Details (The Eye Button)
     const handleDetailsClick = (service) => {
         setSelectedService(service);
         setModalState((prev) => ({ ...prev, details: true }));
     };
-
-    // 2. Open Update Modal (The Edit Button)
     const handleEditClick = (service) => {
         setSelectedService(service);
         setModalState((prev) => ({ ...prev, update: true }));
     };
-
-    // 3. Handle Delete
     const handleDeleteClick = (id) => {
-        setSelectedService({ id }); // We just need the ID for delete
+        setSelectedService({ id });
         setModalState((prev) => ({ ...prev, delete: true }));
     };
-
     const confirmDelete = async () => {
-        if (selectedService?.id) {
+        if (selectedService?.id)
             await deleteMutation.mutateAsync(selectedService.id);
-            setModalState((prev) => ({ ...prev, delete: false }));
-            setSelectedService(null);
-        }
+        setModalState((prev) => ({ ...prev, delete: false }));
+        setSelectedService(null);
     };
 
-    if (isLoading)
+    if (isLoading) {
         return (
-            <div className="h-screen flex items-center justify-center">
-                <Loader2 className="animate-spin text-primary" />
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
+    }
 
     return (
-        <div className="space-y-8 p-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-6">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                            <LayoutGrid className="w-6 h-6 text-primary" />
-                        </div>
+        <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent p-8 md:p-12">
+                <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/15 rounded-full blur-3xl dark:bg-primary/10" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl dark:bg-primary/5" />
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                        <LayoutGrid className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">
+                            Service Catalog
+                        </span>
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
                         Services Management
                     </h1>
-                    <p className="text-muted-foreground mt-1 ml-12">
+                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                         View details and update pricing configuration.
                     </p>
                 </div>
@@ -76,36 +68,28 @@ export default function ServiceManager() {
 
             <ServiceStats services={services} />
 
-            {/* --- CARDS GRID --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {services.map((service) => (
                     <ServiceCard
                         key={service.id}
                         service={service}
-                        onDetails={handleDetailsClick} // Pass the details handler
+                        onDetails={handleDetailsClick}
                         onEdit={handleEditClick}
                         onDelete={handleDeleteClick}
                     />
                 ))}
             </div>
 
-            {/* --- MODALS --- */}
-
-            {/* 1. Read-Only Details Modal */}
             <ServiceDetailsModal
                 isOpen={modalState.details}
                 onClose={() => setModalState({ ...modalState, details: false })}
                 service={selectedService}
             />
-
-            {/* 2. Restricted Update Modal (Icon + Price + Duration only) */}
             <ServiceUpdateModal
                 isOpen={modalState.update}
                 onClose={() => setModalState({ ...modalState, update: false })}
                 service={selectedService}
             />
-
-            {/* 3. Delete Confirmation */}
             <ConfirmationModal
                 open={modalState.delete}
                 onClose={() => setModalState({ ...modalState, delete: false })}
