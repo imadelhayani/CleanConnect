@@ -63,7 +63,7 @@ class BookingController extends Controller
             $totalDuration = 0;
 
             // 1. Calculate Price from Options (1 per group)
-            $availableOptions = $service->options->groupBy('option_group_name'); // FIXED: use correct column
+            $availableOptions = $service->options->groupBy('option_group_name');
             $selectedOptionIds = $validated['options'];
 
             foreach ($availableOptions as $groupName => $optionsInGroup) {
@@ -80,7 +80,7 @@ class BookingController extends Controller
                 $totalDuration += $option->duration_minutes;
             }
 
-            // 2. Add Extras (NOW JUST ARRAY OF IDs)
+            // 2. Add Extras
             if (!empty($validated['extras'])) {
                 foreach ($validated['extras'] as $extraId) {
                     $extra = $service->extras->find($extraId);
@@ -120,12 +120,12 @@ class BookingController extends Controller
                 'total_duration_minutes' => $totalDuration,
             ]);
 
-            // 6. Sync Options (IDs only)
+            // 6. Sync Options
             foreach ($selectedOptionIds as $optId) {
                 $bookingService->selectedOptions()->create(['service_option_id' => $optId]);
             }
 
-            // 7. Sync Extras (IDs only – NO QUANTITY)
+            // 7. Sync Extras
             if (!empty($validated['extras'])) {
                 foreach ($validated['extras'] as $extraId) {
                     $bookingService->selectedExtras()->create(['service_extra_id' => $extraId]);
@@ -139,22 +139,24 @@ class BookingController extends Controller
                 $booking, 'new_booking'
             ));
 
-        return response()->json(
-            $booking->load([
-                'user',
-                'address',
-                'bookingServices.service',
-                'bookingServices.selectedOptions.option',
-                'bookingServices.selectedExtras.extra',
-                'review',
-                'sweepstar',
-            ]),
-            201
-        );
-
+            return response()->json(
+                $booking->load([
+                    'user',
+                    'address',
+                    'bookingServices.service',
+                    'bookingServices.selectedOptions.option',
+                    'bookingServices.selectedExtras.extra',
+                    'review',
+                    'sweepstar',
+                ]),
+                201
+            );
         });
     }
 
+    /**
+     * Update booking details (including status for admin/owner)
+     */
     public function update(Request $request, Booking $booking)
     {
         if ($request->user()->role !== 'admin' && $request->user()->id !== $booking->user_id) {
@@ -173,9 +175,23 @@ class BookingController extends Controller
             'options'      => 'required_with:service_id|array',
             'extras'       => 'nullable|array',
             'final_price'  => 'required_with:service_id|numeric',
+            'status'       => 'sometimes|in:cancelled', // only allow cancellation via status field
         ]);
 
         return DB::transaction(function () use ($request, $validated, $booking) {
+            // Handle status change to cancelled (refund points)
+            if (isset($validated['status']) && $validated['status'] === 'cancelled') {
+                if ($booking->status === 'cancelled') {
+                    return response()->json(['message' => 'Booking already cancelled.'], 400);
+                }
+                $this->refundPointsForBooking($booking);
+                $booking->status = 'cancelled';
+                $booking->cancellation_reason = $request->input('cancellation_reason', 'Cancelled by ' . $request->user()->role);
+                $booking->save();
+                return response()->json(['message' => 'Booking cancelled and points refunded.']);
+            }
+
+            // Normal field updates
             $booking->fill($request->only(['scheduled_at', 'address_id', 'notes']));
 
             if ($request->has('service_id')) {
@@ -183,7 +199,7 @@ class BookingController extends Controller
                 $systemPrice = 0;
                 $totalDuration = 0;
 
-                $availableOptions = $service->options->groupBy('option_group_name'); // FIXED
+                $availableOptions = $service->options->groupBy('option_group_name');
                 $selectedOptionIds = $validated['options'];
 
                 foreach ($availableOptions as $groupName => $optionsInGroup) {
@@ -196,7 +212,6 @@ class BookingController extends Controller
                     $totalDuration += $option->duration_minutes;
                 }
 
-                // Extras – IDs only
                 if (!empty($validated['extras'])) {
                     foreach ($validated['extras'] as $extraId) {
                         $extra = $service->extras->find($extraId);
@@ -235,7 +250,7 @@ class BookingController extends Controller
                     $bookingService->selectedOptions()->create(['service_option_id' => $optId]);
                 }
 
-                // Sync extras – NO QUANTITY
+                // Sync extras
                 if (!empty($validated['extras'])) {
                     foreach ($validated['extras'] as $extraId) {
                         $bookingService->selectedExtras()->create(['service_extra_id' => $extraId]);
@@ -245,7 +260,7 @@ class BookingController extends Controller
 
             $booking->save();
 
-        return response()->json([
+            return response()->json([
                 'message' => 'Booking updated successfully',
                 'booking' => $booking->load([
                     'user',
@@ -257,7 +272,6 @@ class BookingController extends Controller
                     'sweepstar',
                 ])
             ]);
-
         });
     }
 
@@ -282,82 +296,77 @@ class BookingController extends Controller
         return response()->json(['message' => 'Booking deleted successfully']);
     }
 
-public function availableMissions(Request $request)
-{
-    $relationships = [
-        'user',
-        'address',
-        'bookingServices.service',
-        'bookingServices.selectedOptions.option',
-        'bookingServices.selectedExtras.extra',
-        'review',
-        'sweepstar',
-    ];
+    public function availableMissions(Request $request)
+    {
+        $relationships = [
+            'user',
+            'address',
+            'bookingServices.service',
+            'bookingServices.selectedOptions.option',
+            'bookingServices.selectedExtras.extra',
+            'review',
+            'sweepstar',
+        ];
 
-    $jobs = Booking::whereNull('sweepstar_id')
-        ->where('status', 'pending')
-        ->with($relationships)
-        ->orderBy('scheduled_at', 'asc')
-        ->get();
+        $jobs = Booking::whereNull('sweepstar_id')
+            ->where('status', 'pending')
+            ->with($relationships)
+            ->orderBy('scheduled_at', 'asc')
+            ->get();
 
-    return response()->json(['jobs' => $jobs]);
-}
+        return response()->json(['jobs' => $jobs]);
+    }
 
-public function missionsHistory(Request $request)
-{
-    $relationships = [
-        'user',
-        'address',
-        'bookingServices.service',
-        'bookingServices.selectedOptions.option',
-        'bookingServices.selectedExtras.extra',
-        'review',
-        'sweepstar',
-    ];
+    public function missionsHistory(Request $request)
+    {
+        $relationships = [
+            'user',
+            'address',
+            'bookingServices.service',
+            'bookingServices.selectedOptions.option',
+            'bookingServices.selectedExtras.extra',
+            'review',
+            'sweepstar',
+        ];
 
-    $jobs = Booking::where('sweepstar_id', $request->user()->id)
-        ->with($relationships)
-        ->orderBy('scheduled_at', 'desc')
-        ->get();
+        $jobs = Booking::where('sweepstar_id', $request->user()->id)
+            ->with($relationships)
+            ->orderBy('scheduled_at', 'desc')
+            ->get();
 
-    return response()->json(['jobs' => $jobs]);
-}
+        return response()->json(['jobs' => $jobs]);
+    }
 
+    public function acceptMission(Request $request, $id)
+    {
+        return DB::transaction(function () use ($request, $id) {
+            $booking = Booking::lockForUpdate()->findOrFail($id);
 
+            if ($booking->sweepstar_id) {
+                return response()->json(['message' => 'Job already taken.'], 409);
+            }
 
+            $sweepstar = $request->user();
+            $profile = $sweepstar->sweepstarProfile;
 
-public function acceptMission(Request $request, $id)
-{
-    return DB::transaction(function () use ($request, $id) {
-        $booking = Booking::lockForUpdate()->findOrFail($id);
+            if (!$profile) {
+                return response()->json(['message' => 'Sweepstar profile not found.'], 404);
+            }
 
-        if ($booking->sweepstar_id) {
-            return response()->json(['message' => 'Job already taken.'], 409);
-        }
+            $percentage = Setting::where('key', 'booking_acceptance_percentage')->value('value') ?? 10;
+            $requiredPoints = $booking->total_price * ($percentage / 100);
 
-        $sweepstar = $request->user();
-        $profile = $sweepstar->sweepstarProfile;
+            if ($profile->points_balance < $requiredPoints) {
+                return response()->json([
+                    'message' => "Insufficient points. You need {$requiredPoints} points (balance: {$profile->points_balance})."
+                ], 403);
+            }
 
-        if (!$profile) {
-            return response()->json(['message' => 'Sweepstar profile not found.'], 404);
-        }
+            // Deduct points
+            $profile->points_balance -= $requiredPoints;
+            $profile->save();
 
-        // Get current percentage from settings
-        $percentage = Setting::where('key', 'booking_acceptance_percentage')->value('value') ?? 10;
-        $requiredPoints = $booking->total_price * ($percentage / 100);
-
-        if ($profile->points_balance < $requiredPoints) {
-            return response()->json([
-                'message' => "Insufficient points. You need {$requiredPoints} points (balance: {$profile->points_balance})."
-            ], 403);
-        }
-
-        // Deduct points
-        $profile->points_balance -= $requiredPoints;
-        $profile->save();
-
-        // Record transaction (optional)
-        if (class_exists('App\Models\PointTransaction')) {
+            // Record transaction
             PointTransaction::create([
                 'sweepstar_id' => $sweepstar->id,
                 'type' => 'debit',
@@ -366,22 +375,21 @@ public function acceptMission(Request $request, $id)
                 'reference_type' => Booking::class,
                 'reference_id' => $booking->id,
             ]);
-        }
 
-        $booking->update([
-            'sweepstar_id' => $sweepstar->id,
-            'status' => 'confirmed'
-        ]);
+            $booking->update([
+                'sweepstar_id' => $sweepstar->id,
+                'status' => 'confirmed'
+            ]);
 
-        // Notify client
-        $booking->user->notify(new BookingStatusUpdated(
-            "Your booking has been accepted by " . $sweepstar->name,
-            $booking, 'booking_accepted'
-        ));
+            // Notify client
+            $booking->user->notify(new BookingStatusUpdated(
+                "Your booking has been accepted by " . $sweepstar->name,
+                $booking, 'booking_accepted'
+            ));
 
-        return response()->json(['message' => 'Job accepted!']);
-    });
-}
+            return response()->json(['message' => 'Job accepted!']);
+        });
+    }
 
     public function completeMission(Request $request, $id)
     {
@@ -401,6 +409,9 @@ public function acceptMission(Request $request, $id)
         return response()->json(['message' => 'Job marked as completed!']);
     }
 
+    /**
+     * Cancel a booking (client or admin) and refund points if applicable.
+     */
     public function cancel(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
@@ -411,11 +422,55 @@ public function acceptMission(Request $request, $id)
 
         $validated = $request->validate(['reason' => 'required|string|min:5']);
 
-        $booking->update([
-            'status' => 'cancelled',
-            'cancellation_reason' => $validated['reason']
-        ]);
+        return DB::transaction(function () use ($request, $booking, $validated) {
+            // Refund points if the booking was already accepted (has a sweepstar and status confirmed)
+            $this->refundPointsForBooking($booking);
 
-        return response()->json(['message' => 'Booking cancelled.']);
+            $booking->update([
+                'status' => 'cancelled',
+                'cancellation_reason' => $validated['reason']
+            ]);
+
+            return response()->json(['message' => 'Booking cancelled.']);
+        });
+    }
+
+    /**
+     * Private helper: refund points to the sweepstar if points were previously deducted.
+     */
+    private function refundPointsForBooking(Booking $booking)
+    {
+        if (!$booking->sweepstar_id || $booking->status !== 'confirmed') {
+            return;
+        }
+
+        // Find the debit transaction that was created when the sweepstar accepted this booking
+        $debitTransaction = PointTransaction::where('reference_type', Booking::class)
+            ->where('reference_id', $booking->id)
+            ->where('type', 'debit')
+            ->first();
+
+        if (!$debitTransaction) {
+            return; // No points were deducted, nothing to refund
+        }
+
+        $sweepstarProfile = $booking->sweepstar->sweepstarProfile;
+        if (!$sweepstarProfile) {
+            return;
+        }
+
+        // Refund the same amount
+        $sweepstarProfile->points_balance += $debitTransaction->amount;
+        $sweepstarProfile->save();
+
+        // Create a credit transaction for the refund
+        PointTransaction::create([
+            'sweepstar_id' => $booking->sweepstar_id,
+            'type' => 'credit',
+            'amount' => $debitTransaction->amount,
+            'description' => 'Points refunded for cancelled booking #' . $booking->id,
+            'reference_type' => Booking::class,
+            'reference_id' => $booking->id,
+        ]);
     }
 }

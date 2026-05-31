@@ -100,6 +100,8 @@ export const useCancelBooking = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["bookings"] });
+            // Add this line to refresh user data (and points_balance)
+            queryClient.invalidateQueries({ queryKey: ["user"] });
         },
     });
 };
