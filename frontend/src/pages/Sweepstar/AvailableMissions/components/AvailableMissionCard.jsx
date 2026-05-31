@@ -1,3 +1,4 @@
+// frontend/src/pages/Sweepstar/AvailableMissions/components/AvailableMissionCard.jsx
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -28,13 +29,25 @@ export default function AvailableMissionCard({
     onViewDetails,
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const scheduledDate = new Date(job.scheduled_at);
-    console.log(job);
+    // Local state to prevent double‑click while the accept request is pending
+    const [isAccepting, setIsAccepting] = useState(false);
 
-    // Handle internal "View Details" or parent "onViewDetails"
+    const scheduledDate = new Date(job.scheduled_at);
+
     const handleViewDetails = () => {
         setIsModalOpen(true);
         if (onViewDetails) onViewDetails(job.id);
+    };
+
+    // Wrapped accept handler with client‑side debouncing
+    const handleAccept = async () => {
+        if (isAccepting) return; // prevent duplicate clicks
+        setIsAccepting(true);
+        try {
+            await onAccept(job.id);
+        } finally {
+            setIsAccepting(false);
+        }
     };
 
     // Format options and extras (from the updated structure)
@@ -171,11 +184,11 @@ export default function AvailableMissionCard({
                     {/* Actions */}
                     <div className="flex gap-3 pt-2">
                         <Button
-                            onClick={() => onAccept(job.id)}
-                            disabled={isProcessing}
+                            onClick={handleAccept}
+                            disabled={isProcessing || isAccepting}
                             className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-md hover:shadow-lg transition-all"
                         >
-                            {isProcessing ? (
+                            {isProcessing || isAccepting ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                     Securing...

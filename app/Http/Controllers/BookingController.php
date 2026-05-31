@@ -337,13 +337,15 @@ class BookingController extends Controller
         return response()->json(['jobs' => $jobs]);
     }
 
-    public function acceptMission(Request $request, $id)
+      public function acceptMission(Request $request, $id)
     {
         return DB::transaction(function () use ($request, $id) {
+            // Lock the row for update to prevent concurrent modifications
             $booking = Booking::lockForUpdate()->findOrFail($id);
 
-            if ($booking->sweepstar_id) {
-                return response()->json(['message' => 'Job already taken.'], 409);
+            // Double-check: the booking must be pending and have no sweepstar assigned
+            if ($booking->status !== 'pending' || $booking->sweepstar_id !== null) {
+                return response()->json(['message' => 'This mission is no longer available.'], 409);
             }
 
             $sweepstar = $request->user();
@@ -376,6 +378,7 @@ class BookingController extends Controller
                 'reference_id' => $booking->id,
             ]);
 
+            // Assign sweepstar and update status
             $booking->update([
                 'sweepstar_id' => $sweepstar->id,
                 'status' => 'confirmed'
