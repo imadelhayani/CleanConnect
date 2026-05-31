@@ -28,6 +28,7 @@ import { getRoleStyles } from "@/utils/roleStyles";
 import { getInitials, getAvatarUrl } from "@/utils/avatarHelper";
 
 import { useUserDetails } from "@/Hooks/useUsers";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 export default function UserDetailModal({ userId, isOpen, onClose }) {
     const { data: user, isLoading } = useUserDetails(userId);
@@ -40,6 +41,10 @@ export default function UserDetailModal({ userId, isOpen, onClose }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogDescription className="sr-only">
+                Modal for viewing detailed information about a user, including
+                their profile info, activity, and reviews.
+            </DialogDescription>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-border/60 bg-background/80 backdrop-blur-xl">
                 {/* Header with Avatar - UPDATED */}
                 <DialogHeader className="p-6 pb-6 border-b border-border/60 bg-gradient-to-r from-background to-muted/30">
@@ -328,17 +333,21 @@ export default function UserDetailModal({ userId, isOpen, onClose }) {
                                                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
                                                                 <div>
                                                                     <p className="font-semibold text-foreground">
-                                                                        {booking.services
+                                                                        {booking.bookingServices
                                                                             ?.map(
                                                                                 (
-                                                                                    s,
+                                                                                    bs,
                                                                                 ) =>
-                                                                                    s.name,
+                                                                                    bs
+                                                                                        .service
+                                                                                        ?.name,
+                                                                            )
+                                                                            .filter(
+                                                                                Boolean,
                                                                             )
                                                                             .join(
                                                                                 ", ",
-                                                                            ) ||
-                                                                            "Cleaning"}
+                                                                            )}
                                                                     </p>
                                                                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                                                                         <Calendar className="w-3 h-3" />

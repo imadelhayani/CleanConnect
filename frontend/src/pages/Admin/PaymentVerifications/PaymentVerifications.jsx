@@ -8,7 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, Eye, Wallet } from "lucide-react";
+import {
+    Loader2,
+    CheckCircle,
+    XCircle,
+    Eye,
+    Wallet,
+    Image as ImageIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -23,11 +30,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/avatarHelper";
 import { Label } from "@radix-ui/react-dropdown-menu";
 
+// Helper to get full screenshot URL
+const getScreenshotUrl = (path) => {
+    if (!path) return null;
+    // If path already starts with http, return as is
+    if (path.startsWith("http")) return path;
+    // Otherwise, prepend the API base URL or storage URL
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+    // Remove leading slash if any to avoid double slash
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+    return `${baseUrl}/storage/${cleanPath}`;
+};
+
 export default function PaymentVerifications() {
     const [activeTab, setActiveTab] = useState("pending");
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [adminNotes, setAdminNotes] = useState("");
     const [actionType, setActionType] = useState(null);
+    const [previewImage, setPreviewImage] = useState(null); // For screenshot modal
 
     const {
         data: payments,
@@ -42,27 +62,29 @@ export default function PaymentVerifications() {
         setActionType("approve");
         setAdminNotes("");
     };
+
     const handleReject = (payment) => {
         setSelectedPayment(payment);
         setActionType("reject");
         setAdminNotes("");
     };
+
     const confirmAction = async () => {
         if (!selectedPayment) return;
         try {
-            if (actionType === "approve")
+            if (actionType === "approve") {
                 await approveMutation.mutateAsync({
                     id: selectedPayment.id,
                     adminNotes,
                 });
-            else
+                toast.success("Payment approved. Points credited.");
+            } else {
                 await rejectMutation.mutateAsync({
                     id: selectedPayment.id,
                     adminNotes,
                 });
-            toast.success(
-                `Payment ${actionType === "approve" ? "approved" : "rejected"}.`,
-            );
+                toast.success("Payment rejected.");
+            }
             setSelectedPayment(null);
             refetch();
         } catch (error) {
@@ -223,21 +245,28 @@ export default function PaymentVerifications() {
                                                     }
                                                 </div>
                                             </div>
+
+                                            {/* Screenshot Preview */}
                                             {payment.screenshot_path && (
                                                 <div>
-                                                    <a
-                                                        href={
-                                                            payment.screenshot_path
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="gap-2"
+                                                        onClick={() =>
+                                                            setPreviewImage(
+                                                                getScreenshotUrl(
+                                                                    payment.screenshot_path,
+                                                                ),
+                                                            )
                                                         }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1 text-primary hover:underline"
                                                     >
-                                                        <Eye className="h-4 w-4" />{" "}
+                                                        <ImageIcon className="h-4 w-4" />
                                                         View Screenshot
-                                                    </a>
+                                                    </Button>
                                                 </div>
                                             )}
+
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     {getStatusBadge(
@@ -291,6 +320,7 @@ export default function PaymentVerifications() {
                 </CardContent>
             </Card>
 
+            {/* Admin Action Dialog (Approve/Reject) */}
             <Dialog
                 open={!!selectedPayment}
                 onOpenChange={() => setSelectedPayment(null)}
@@ -355,6 +385,30 @@ export default function PaymentVerifications() {
                             {actionType === "approve" ? "Approve" : "Reject"}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Image Preview Modal */}
+            <Dialog
+                open={!!previewImage}
+                onOpenChange={() => setPreviewImage(null)}
+            >
+                <DialogContent className="max-w-4xl p-0 bg-black/90">
+                    <div className="relative">
+                        <img
+                            src={previewImage}
+                            alt="Payment Screenshot"
+                            className="w-full h-auto max-h-[80vh] object-contain"
+                        />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 text-white hover:bg-white/20"
+                            onClick={() => setPreviewImage(null)}
+                        >
+                            <XCircle className="h-6 w-6" />
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

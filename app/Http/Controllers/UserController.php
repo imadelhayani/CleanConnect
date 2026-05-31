@@ -34,31 +34,28 @@ class UserController extends Controller
      * Display the specified resource.
      * Includes Bookings, Reviews, and Profile details.
      */
-    public function show(string $id)
-    {
-        $user = User::findOrFail($id);
+   public function show(string $id)
+{
+    $user = User::findOrFail($id);
 
-        // 1. Load data if user is a SWEEPSTAR
-        if ($user->role === 'sweepstar') {
-            $user->load([
-                'sweepstarProfile',
-                'sweepstarBookings.user',
-                'sweepstarBookings.address',
-                'reviewsReceived.reviewer'
-            ]);
-        }
-
-        // 2. Load data if user is a CLIENT
-        elseif ($user->role === 'client') {
-            $user->load([
-                'clientBookings.sweepstar',
-                'clientBookings.services',
-                'reviewsWritten.target'
-            ]);
-        }
-
-        return response()->json($user);
+    if ($user->role === 'sweepstar') {
+        $user->load([
+            'sweepstarProfile',
+            'sweepstarBookings.user',
+            'sweepstarBookings.address',
+            'sweepstarBookings.bookingServices.service',    // ✅ correct
+            'reviewsReceived.reviewer'
+        ]);
+    } elseif ($user->role === 'client') {
+        $user->load([
+            'clientBookings.sweepstar',
+            'clientBookings.bookingServices.service',       // ✅ correct
+            'reviewsWritten.target'
+        ]);
     }
+
+    return response()->json($user);
+}
 
     /**
      * Update User Profile (Self or Admin)
