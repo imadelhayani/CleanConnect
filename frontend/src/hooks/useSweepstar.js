@@ -11,26 +11,13 @@ import SweepstarApi from "@/Services/SweepstarApi";
 
 // 1. Fetch all pending applications
 // Hooks/useApplications.js (or wherever it lives)
-export const usePendingApplications = () => {
+export const usePendingApplications = (page = 1) => {
     return useQuery({
-        queryKey: ["admin", "applications"],
+        queryKey: ["admin", "applications", page],
         queryFn: async () => {
-            const response = await AdminApi.getPendingApplications();
-            const data = response.data;
-
-            // Normalize possible shapes: [], { applications: [...] }, { data: [...] }
-            const list = Array.isArray(data)
-                ? data
-                : Array.isArray(data?.applications)
-                ? data.applications
-                : Array.isArray(data?.data)
-                ? data.data
-                : [];
-
-            // If you only want still-pending ones:
-            return list.filter((app) => app.is_verified === false);
+            const response = await AdminApi.getPendingApplications(page);
+            return response.data; // includes stats
         },
-        staleTime: 1000 * 60,
     });
 };
 

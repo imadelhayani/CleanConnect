@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { usePointTransactions } from "@/Hooks/usePayments";
 import {
     Card,
@@ -18,9 +18,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, History, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
+import PaginationComponent from "@/components/ui/PaginationComponent";
 
 export default function PointTransactions() {
-    const { data: transactions, isLoading } = usePointTransactions();
+    const [page, setPage] = useState(1);
+    const { data: paginatedData, isLoading } = usePointTransactions(page);
+
+    const transactions = paginatedData?.data ?? [];
+    const meta = paginatedData
+        ? {
+              current_page: paginatedData.current_page,
+              last_page: paginatedData.last_page,
+              per_page: paginatedData.per_page,
+              total: paginatedData.total,
+          }
+        : null;
 
     if (isLoading) {
         return (
@@ -70,7 +82,7 @@ export default function PointTransactions() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
-                    {transactions?.length === 0 ? (
+                    {transactions.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
                             <div className="p-4 rounded-full bg-muted/40 mb-4">
                                 <History className="w-10 h-10 text-muted-foreground/40" />
@@ -84,70 +96,79 @@ export default function PointTransactions() {
                             </p>
                         </div>
                     ) : (
-                        <div className="rounded-lg border border-border/60 overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/30">
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Amount</TableHead>
-                                        <TableHead>Description</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {transactions?.map((tx) => (
-                                        <TableRow
-                                            key={tx.id}
-                                            className="hover:bg-muted/20"
-                                        >
-                                            <TableCell className="font-mono text-xs">
-                                                {format(
-                                                    new Date(tx.created_at),
-                                                    "MMM d, yyyy HH:mm",
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        tx.type === "credit"
-                                                            ? "default"
-                                                            : "destructive"
-                                                    }
-                                                    className="gap-1"
-                                                >
-                                                    {tx.type === "credit" ? (
-                                                        <>
-                                                            <TrendingUp className="w-3 h-3" />
-                                                            Credit
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <TrendingDown className="w-3 h-3" />
-                                                            Debit
-                                                        </>
-                                                    )}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell
-                                                className={
-                                                    tx.type === "credit"
-                                                        ? "text-green-600 dark:text-green-400 font-semibold"
-                                                        : "text-red-600 dark:text-red-400 font-semibold"
-                                                }
-                                            >
-                                                {tx.type === "credit"
-                                                    ? "+"
-                                                    : "-"}
-                                                {tx.amount}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                                {tx.description || "—"}
-                                            </TableCell>
+                        <>
+                            <div className="rounded-lg border border-border/60 overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/30">
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead>Amount</TableHead>
+                                            <TableHead>Description</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {transactions.map((tx) => (
+                                            <TableRow
+                                                key={tx.id}
+                                                className="hover:bg-muted/20"
+                                            >
+                                                <TableCell className="font-mono text-xs">
+                                                    {format(
+                                                        new Date(tx.created_at),
+                                                        "MMM d, yyyy HH:mm",
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={
+                                                            tx.type === "credit"
+                                                                ? "default"
+                                                                : "destructive"
+                                                        }
+                                                        className="gap-1"
+                                                    >
+                                                        {tx.type ===
+                                                        "credit" ? (
+                                                            <>
+                                                                <TrendingUp className="w-3 h-3" />
+                                                                Credit
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <TrendingDown className="w-3 h-3" />
+                                                                Debit
+                                                            </>
+                                                        )}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell
+                                                    className={
+                                                        tx.type === "credit"
+                                                            ? "text-green-600 dark:text-green-400 font-semibold"
+                                                            : "text-red-600 dark:text-red-400 font-semibold"
+                                                    }
+                                                >
+                                                    {tx.type === "credit"
+                                                        ? "+"
+                                                        : "-"}
+                                                    {tx.amount}
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {tx.description || "—"}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                            {meta && meta.last_page > 1 && (
+                                <PaginationComponent
+                                    meta={meta}
+                                    onPageChange={setPage}
+                                />
+                            )}
+                        </>
                     )}
                 </CardContent>
             </Card>

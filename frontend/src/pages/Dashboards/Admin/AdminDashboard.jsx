@@ -11,7 +11,7 @@ import {
 
 import { useUser } from "@/Hooks/useAuth";
 import { useDashboard } from "@/Hooks/useDashboard";
-import { useAllBookings } from "@/Hooks/useBookings";
+import { useBookingDetail } from "@/Hooks/useBookings";
 
 import { Button } from "@/components/ui/button";
 import StatCard from "./components/StatCard";
@@ -22,12 +22,14 @@ import BookingDetailModal from "@/pages/Admin/Bookings/components/BookingDetailM
 export default function AdminDashboard() {
     const { data: user } = useUser();
     const { adminStats, isAdminLoading } = useDashboard();
-    const { data: allBookings = [] } = useAllBookings();
-    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [selectedBookingId, setSelectedBookingId] = useState(null);
+
+    // Fetch full booking details when ID is set
+    const { data: selectedBooking, isLoading: isLoadingBooking } =
+        useBookingDetail(selectedBookingId);
 
     const handleViewBooking = (partialBooking) => {
-        const fullDetails = allBookings.find((b) => b.id === partialBooking.id);
-        setSelectedBooking(fullDetails || partialBooking);
+        setSelectedBookingId(partialBooking.id);
     };
 
     const formatCurrency = (amount) =>
@@ -124,8 +126,8 @@ export default function AdminDashboard() {
 
             <BookingDetailModal
                 booking={selectedBooking}
-                open={!!selectedBooking}
-                onClose={() => setSelectedBooking(null)}
+                open={!!selectedBookingId && !isLoadingBooking}
+                onClose={() => setSelectedBookingId(null)}
             />
         </div>
     );

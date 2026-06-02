@@ -16,22 +16,25 @@ export const useSubmitPayment = () => {
 };
 
 // Sweepstar: Get point transactions
-export const usePointTransactions = () => {
+export const usePointTransactions = (page = 1) => {
     return useQuery({
-        queryKey: ["point-transactions"],
+        queryKey: ["point-transactions", page],
         queryFn: async () => {
-            const response = await PaymentApi.getPointTransactions();
+            const response = await PaymentApi.getPointTransactions(page);
             return response.data;
         },
     });
 };
 
 // Admin: Get payment verifications (with status filter)
-export const usePaymentVerifications = (status = "pending") => {
+export const usePaymentVerifications = (status = "pending", page = 1) => {
     return useQuery({
-        queryKey: ["payment-verifications", status],
+        queryKey: ["payment-verifications", status, page],
         queryFn: async () => {
-            const response = await PaymentApi.getPaymentVerifications(status);
+            const response = await PaymentApi.getPaymentVerifications(
+                status,
+                page,
+            );
             return response.data;
         },
     });

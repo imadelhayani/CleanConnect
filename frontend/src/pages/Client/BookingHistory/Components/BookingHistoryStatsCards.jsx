@@ -1,4 +1,3 @@
-// src/pages/booking/BookingStatsCards.jsx
 import React from "react";
 import {
     Calendar,
@@ -9,27 +8,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function BookingHistoryStatsCards({ bookings }) {
-    const stats = {
-        total: bookings.length,
-        confirmed: bookings.filter(
-            (b) =>
-                ["confirmed"].includes(b.status?.toLowerCase()) &&
-                new Date(b.scheduled_at) > new Date(),
-        ).length,
-        pending: bookings.filter(
-            (b) =>
-                ["pending"].includes(b.status?.toLowerCase()) &&
-                new Date(b.scheduled_at) > new Date(),
-        ).length,
-        completed: bookings.filter(
-            (b) => b.status?.toLowerCase() === "completed",
-        ).length,
-        cancelled: bookings.filter(
-            (b) => b.status?.toLowerCase() === "cancelled",
-        ).length,
-    };
-
+export default function BookingHistoryStatsCards({ stats }) {
     const statItems = [
         {
             label: "Total Bookings",

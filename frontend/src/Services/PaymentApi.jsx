@@ -1,16 +1,9 @@
 import { axiosClient } from "@/api/axios";
 
 const PaymentApi = {
-    // Sweepstar: Request a payment code (also returns admin bank details)
     requestPaymentCode: async () => {
-        const response = await axiosClient.post(
-            "/api/sweepstar/request-payment-code",
-        );
-        console.log(response);
-        return response;
+        return await axiosClient.post("/api/sweepstar/request-payment-code");
     },
-
-    // Sweepstar: Submit payment verification
     submitPayment: async (formData) => {
         return await axiosClient.post(
             "/api/sweepstar/submit-payment",
@@ -20,36 +13,26 @@ const PaymentApi = {
             },
         );
     },
-
-    // Sweepstar: Get point transactions
-    getPointTransactions: async () => {
-        return await axiosClient.get("/api/sweepstar/point-transactions");
-    },
-
-    // Admin: Get all payment verifications (optional status filter)
-    getPaymentVerifications: async (status = "pending") => {
+    getPointTransactions: async (page = 1) => {
         return await axiosClient.get(
-            `/api/admin/payment-verifications?status=${status}`,
+            `/api/sweepstar/point-transactions?page=${page}`,
         );
     },
-
-    // Admin: Approve a payment
+    getPaymentVerifications: async (status = "pending", page = 1) => {
+        return await axiosClient.get(
+            `/api/admin/payment-verifications?status=${status}&page=${page}`,
+        );
+    },
     approvePayment: async (id, adminNotes = "") => {
         return await axiosClient.post(
             `/api/admin/payment-verifications/${id}/approve`,
-            {
-                admin_notes: adminNotes,
-            },
+            { admin_notes: adminNotes },
         );
     },
-
-    // Admin: Reject a payment
     rejectPayment: async (id, adminNotes) => {
         return await axiosClient.post(
             `/api/admin/payment-verifications/${id}/reject`,
-            {
-                admin_notes: adminNotes,
-            },
+            { admin_notes: adminNotes },
         );
     },
 };

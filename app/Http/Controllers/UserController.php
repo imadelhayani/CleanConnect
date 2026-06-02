@@ -17,18 +17,32 @@ class UserController extends Controller
      * Display a listing of the resource.
      * Accessible only by Admin.
      */
-    public function index(Request $request)
-    {
-        // 1. Check if admin
-        if ($request->user()->role !== 'admin') {
-            abort(403, 'Unauthorized');
-        }
-
-        // 2. Fetch users including soft-deleted ones
-        $users = User::withTrashed()->get();
-
-        return response()->json(['users' => $users]);
+public function index(Request $request)
+{
+    if ($request->user()->role !== 'admin') {
+        abort(403, 'Unauthorized');
     }
+
+    $query = User::withTrashed();
+
+    $stats = [
+        'total' => (clone $query)->count(),
+        'active' => (clone $query)->where('status', 'active')->count(),
+        'suspended' => (clone $query)->where('status', 'suspended')->count(),
+        'deleted' => (clone $query)->whereNotNull('deleted_at')->count(),
+    ];
+
+    $users = $query->paginate(15);
+
+    return response()->json([
+        'data' => $users->items(),
+        'stats' => $stats,
+        'current_page' => $users->currentPage(),
+        'last_page' => $users->lastPage(),
+        'per_page' => $users->perPage(),
+        'total' => $users->total(),
+    ]);
+}
 
     /**
      * Display the specified resource.

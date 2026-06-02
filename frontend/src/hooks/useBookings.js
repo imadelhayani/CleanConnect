@@ -10,45 +10,69 @@ import SweepstarApi from "@/Services/SweepstarApi";
 */
 
 // 1. Client: Get "My Bookings"
-export const useMyBookings = () => {
+export const useMyBookings = (page = 1) => {
     return useQuery({
-        queryKey: ["bookings", "client"],
+        queryKey: ["bookings", "client", page],
         queryFn: async () => {
-            const response = await ClientApi.getMyBookings();
-            return response.data.bookings || response.data;
+            const response = await ClientApi.getMyBookings(page);
+            return response.data; // now includes stats
         },
     });
 };
 
 // 2. Admin: Get "All Bookings"
-export const useAllBookings = () => {
+export const useAllBookings = (page = 1) => {
     return useQuery({
-        queryKey: ["bookings", "admin"],
+        queryKey: ["bookings", "admin", page],
         queryFn: async () => {
-            const response = await AdminApi.getAllBookings();
-            return response.data.bookings || response.data;
+            const response = await AdminApi.getAllBookings(page);
+            // response.data now contains { data, stats, ...pagination }
+            return response.data;
         },
+    });
+};
+// Fetch single booking by ID (for admin modal)
+export const useBookingDetail = (id) => {
+    return useQuery({
+        queryKey: ["booking", id],
+        queryFn: async () => {
+            const response = await AdminApi.getBooking(id);
+            return response.data;
+        },
+        enabled: !!id, // only fetch if id is provided
     });
 };
 
 // 3. Sweepstar: Get Available Missions
-export const useAvailableMissions = () => {
+export const useAvailableMissions = (page = 1) => {
     return useQuery({
-        queryKey: ["sweepstar", "missions"],
+        queryKey: ["sweepstar", "missions", page],
         queryFn: async () => {
-            const response = await SweepstarApi.getAvailableMissions();
-            return response.data.jobs || [];
+            const response = await SweepstarApi.getAvailableMissions(page);
+            return response.data;
+        },
+    });
+};
+export const useCurrentMissions = (page = 1) => {
+    return useQuery({
+        queryKey: ["sweepstar", "missionsHistory", "active", page],
+        queryFn: async () => {
+            const response = await SweepstarApi.getMissionsHistory(page, true); // pass active=true
+            return response.data;
         },
     });
 };
 
 // 4. Sweepstar: Get Missions History (Schedule)
-export const useMissionsHistory = () => {
+export const useMissionsHistory = (page = 1, archived = false) => {
     return useQuery({
-        queryKey: ["sweepstar", "missionsHistory"],
+        queryKey: ["sweepstar", "missionsHistory", archived, page],
         queryFn: async () => {
-            const response = await SweepstarApi.getMissionsHistory();
-            return response.data.jobs || [];
+            const response = await SweepstarApi.getMissionsHistory(
+                page,
+                archived,
+            );
+            return response.data;
         },
     });
 };

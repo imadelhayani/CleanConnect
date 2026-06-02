@@ -8,15 +8,7 @@ import {
     XCircle,
 } from "lucide-react";
 
-export default function BookingStats({ bookings }) {
-    const stats = {
-        total: bookings.length,
-        pending: bookings.filter((b) => b.status === "pending").length,
-        confirmed: bookings.filter((b) => b.status === "confirmed").length,
-        completed: bookings.filter((b) => b.status === "completed").length,
-        cancelled: bookings.filter((b) => b.status === "cancelled").length,
-    };
-
+export default function BookingStats({ stats }) {
     const statItems = [
         {
             label: "Total Bookings",

@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { UserCheck, Loader2, AlertCircle } from "lucide-react";
+import { UserCheck, Loader2 } from "lucide-react";
 import {
     usePendingApplications,
     useApproveApplication,
     useRejectApplication,
 } from "@/Hooks/useSweepstar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import PaginationComponent from "@/components/ui/PaginationComponent";
 import ApplicationsStatCards from "./components/ApplicationsStatCards";
 import ApplicationSearch from "./components/ApplicationsSearch";
 import ApplicationsTable from "./components/ApplicationsTable";
@@ -13,11 +13,24 @@ import ApplicationDetailModal from "./components/ApplicationDetailModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 export default function ApplicationManager() {
+    const [page, setPage] = useState(1);
     const {
-        data: applications = [],
+        data: paginatedData,
         isLoading,
         isError,
-    } = usePendingApplications();
+    } = usePendingApplications(page);
+
+    const applications = paginatedData?.data ?? [];
+    const stats = paginatedData?.stats ?? { total: 0 };
+    const meta = paginatedData
+        ? {
+              current_page: paginatedData.current_page,
+              last_page: paginatedData.last_page,
+              per_page: paginatedData.per_page,
+              total: paginatedData.total,
+          }
+        : null;
+
     const approveMutation = useApproveApplication();
     const rejectMutation = useRejectApplication();
     const [searchTerm, setSearchTerm] = useState("");
@@ -52,22 +65,6 @@ export default function ApplicationManager() {
         }
     };
 
-    const getModalContent = () => {
-        if (confirmState.type === "APPROVE")
-            return {
-                title: "Approve Sweepstar?",
-                description: `Are you sure you want to promote ${confirmState.name || "this applicant"} to a Sweepstar?`,
-                variant: "default",
-                confirmText: "Approve Application",
-            };
-        return {
-            title: "Reject Application?",
-            description: "Are you sure? This action cannot be undone.",
-            variant: "destructive",
-            confirmText: "Reject Application",
-        };
-    };
-    const modalContent = getModalContent();
     const avgRate = applications.length
         ? (
               applications.reduce(
@@ -83,34 +80,27 @@ export default function ApplicationManager() {
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
-    if (isError)
-        return <Alert variant="destructive">Error loading applications</Alert>;
+    if (isError) return <div>Error loading applications</div>;
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
+        <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent p-8 md:p-12">
-                <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/15 rounded-full blur-3xl dark:bg-primary/10" />
-                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl dark:bg-primary/5" />
-                <div className="relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
-                        <UserCheck className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">
-                            Verification Queue
-                        </span>
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                        Sweepstar Requests
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                        Review and approve applications from users who want to
-                        join our professional network.
-                    </p>
+            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                    <UserCheck className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">
+                        Verification Queue
+                    </span>
                 </div>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                    Sweepstar Requests
+                </h1>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
+                    Review and approve applications.
+                </p>
             </div>
-
             <ApplicationsStatCards
-                applicationsCount={applications.length}
+                applicationsCount={stats.total}
                 filteredCount={filteredApps.length}
                 avgRate={avgRate}
             />
@@ -127,6 +117,9 @@ export default function ApplicationManager() {
                 isRejecting={false}
                 onViewDetails={setSelectedApp}
             />
+            {meta && meta.last_page > 1 && (
+                <PaginationComponent meta={meta} onPageChange={setPage} />
+            )}
             <ApplicationDetailModal
                 application={selectedApp}
                 open={!!selectedApp}
@@ -138,10 +131,24 @@ export default function ApplicationManager() {
                     setConfirmState({ ...confirmState, open: false })
                 }
                 onConfirm={handleFinalConfirmation}
-                title={modalContent.title}
-                description={modalContent.description}
-                variant={modalContent.variant}
-                confirmText={modalContent.confirmText}
+                title={
+                    confirmState.type === "APPROVE"
+                        ? "Approve Sweepstar?"
+                        : "Reject Application?"
+                }
+                description={
+                    confirmState.type === "APPROVE"
+                        ? `Promote ${confirmState.name} to Sweepstar?`
+                        : "Are you sure? This cannot be undone."
+                }
+                variant={
+                    confirmState.type === "APPROVE" ? "default" : "destructive"
+                }
+                confirmText={
+                    confirmState.type === "APPROVE"
+                        ? "Approve Application"
+                        : "Reject Application"
+                }
                 isLoading={
                     approveMutation.isPending || rejectMutation.isPending
                 }

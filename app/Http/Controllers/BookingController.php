@@ -20,26 +20,64 @@ class BookingController extends Controller
     /**
      * Fetch all bookings
      */
-    public function index(Request $request)
-    {
-        $relationships = [
-            'user',
-            'address',
-            'bookingServices.service',
-            'bookingServices.selectedOptions.option',
-            'bookingServices.selectedExtras.extra',
-            'review',
-            'sweepstar'
-        ];
+public function index(Request $request)
+{
+    $relationships = [
+        'user',
+        'address',
+        'bookingServices.service',
+        'bookingServices.selectedOptions.option',
+        'bookingServices.selectedExtras.extra',
+        'review',
+        'sweepstar'
+    ];
 
-        $query = Booking::with($relationships)->orderBy('created_at', 'desc');
+    $query = Booking::with($relationships)->orderBy('created_at', 'desc');
 
-        if ($request->user()->role === 'client') {
-            $query->where('user_id', $request->user()->id);
-        }
-
-        return response()->json(['bookings' => $query->get()]);
+    if ($request->user()->role === 'client') {
+        $query->where('user_id', $request->user()->id);
     }
+
+    // Get stats BEFORE pagination
+    $stats = [
+        'total' => (clone $query)->count(),
+        'pending' => (clone $query)->where('status', 'pending')->count(),
+        'confirmed' => (clone $query)->where('status', 'confirmed')->count(),
+        'completed' => (clone $query)->where('status', 'completed')->count(),
+        'cancelled' => (clone $query)->where('status', 'cancelled')->count(),
+    ];
+
+    $bookings = $query->paginate(15);
+
+    // Merge stats into the response
+    return response()->json([
+        'data' => $bookings->items(),
+        'stats' => $stats,
+        'current_page' => $bookings->currentPage(),
+        'last_page' => $bookings->lastPage(),
+        'per_page' => $bookings->perPage(),
+        'total' => $bookings->total(),
+    ]);
+}
+
+public function show(Request $request, Booking $booking)
+{
+    if ($request->user()->role !== 'admin' &&
+        $request->user()->role !== 'sweepstar' &&
+        $request->user()->id !== $booking->user_id) {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    return response()->json($booking->load([
+        'user',
+        'address',
+        'sweepstar',  
+        'bookingServices.service',
+        'bookingServices.selectedOptions.option',
+        'bookingServices.selectedExtras.extra'
+    ]));
+}
+
 
     /**
      * Store a new Single-Service Booking
@@ -316,16 +354,7 @@ class BookingController extends Controller
     });
 }
 
-    public function show(Request $request, Booking $booking)
-    {
-        if ($request->user()->role !== 'admin' &&
-            $request->user()->role !== 'sweepstar' &&
-            $request->user()->id !== $booking->user_id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
 
-        return response()->json($booking->load(['user', 'address', 'bookingServices.service', 'bookingServices.selectedOptions.option', 'bookingServices.selectedExtras.extra']));
-    }
 
     public function destroy(Request $request, Booking $booking)
     {
@@ -337,7 +366,7 @@ class BookingController extends Controller
         return response()->json(['message' => 'Booking deleted successfully']);
     }
 
-    public function availableMissions(Request $request)
+     public function availableMissions(Request $request)
     {
         $relationships = [
             'user',
@@ -353,30 +382,50 @@ class BookingController extends Controller
             ->where('status', 'pending')
             ->with($relationships)
             ->orderBy('scheduled_at', 'asc')
-            ->get();
+            ->paginate(15);
 
-        return response()->json(['jobs' => $jobs]);
+        return response()->json($jobs);
     }
 
-    public function missionsHistory(Request $request)
-    {
-        $relationships = [
-            'user',
-            'address',
-            'bookingServices.service',
-            'bookingServices.selectedOptions.option',
-            'bookingServices.selectedExtras.extra',
-            'review',
-            'sweepstar',
-        ];
 
-        $jobs = Booking::where('sweepstar_id', $request->user()->id)
-            ->with($relationships)
-            ->orderBy('scheduled_at', 'desc')
-            ->get();
+public function missionsHistory(Request $request)
+{
+    $relationships = [
+        'user',
+        'address',
+        'bookingServices.service',
+        'bookingServices.selectedOptions.option',
+        'bookingServices.selectedExtras.extra',
+        'review',
+        'sweepstar',
+    ];
 
-        return response()->json(['jobs' => $jobs]);
+    $query = Booking::where('sweepstar_id', $request->user()->id);
+
+    // If 'archived' parameter is true, return only completed/cancelled
+    if ($request->boolean('archived')) {
+        $query->whereIn('status', ['completed', 'cancelled']);
     }
+
+    // Global counts (for header)
+    $completedCount = Booking::where('sweepstar_id', $request->user()->id)
+        ->where('status', 'completed')->count();
+    $archivedCount = Booking::where('sweepstar_id', $request->user()->id)
+        ->whereIn('status', ['completed', 'cancelled'])->count();
+
+    $jobs = $query->with($relationships)
+        ->orderBy('scheduled_at', 'desc')
+        ->paginate(15);
+
+    $response = $jobs->toArray();
+    $response['completed_count'] = $completedCount;
+    $response['archived_count'] = $archivedCount;
+
+    return response()->json($response);
+}
+
+
+
 
       public function acceptMission(Request $request, $id)
     {

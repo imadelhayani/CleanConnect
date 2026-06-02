@@ -8,12 +8,11 @@ use Illuminate\Http\Request;
 class AddressController extends Controller
 {
 
-    public function index(Request $request)
-    {
-        return response()->json([
-            'addresses' => $request->user()->addresses
-        ]);
-    }
+public function index(Request $request)
+{
+    $addresses = $request->user()->addresses()->paginate(15);
+    return response()->json($addresses);
+}
 
     public function store(Request $request)
     {

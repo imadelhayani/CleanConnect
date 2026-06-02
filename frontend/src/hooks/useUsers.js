@@ -7,26 +7,14 @@ const fetchUsers = async () => {
     return data.users || data;
 };
 
-export function useUsers() {
-    const {
-        data = [],
-        isLoading,
-        isError,
-        error,
-        refetch,
-    } = useQuery({
-        queryKey: ["users"],
-        queryFn: fetchUsers,
+export function useUsers(page = 1) {
+    return useQuery({
+        queryKey: ["users", page],
+        queryFn: async () => {
+            const response = await AdminApi.getAllUsers(page);
+            return response.data; // includes stats
+        },
     });
-
-    return {
-        users: data,
-        loading: isLoading,
-        error: isError
-            ? error?.message || "An unexpected error occurred"
-            : null,
-        refetch,
-    };
 }
 export const useUserDetails = (userId) => {
     return useQuery({

@@ -88,16 +88,16 @@ class PaymentVerificationController extends Controller
     /**
      * Admin: List all payment verifications (filter by status).
      */
-    public function index(Request $request)
-    {
-        $status = $request->get('status', 'pending');
-        $verifications = PaymentVerification::with('sweepstar')
-            ->where('status', $status)
-            ->orderBy('created_at', 'desc')
-            ->get();
+   public function index(Request $request)
+{
+    $status = $request->get('status', 'pending');
+    $verifications = PaymentVerification::with('sweepstar')
+        ->where('status', $status)
+        ->orderBy('created_at', 'desc')
+        ->paginate(15);
 
-        return response()->json($verifications);
-    }
+    return response()->json($verifications);
+}
 
     /**
      * Admin: Approve a payment and credit points.

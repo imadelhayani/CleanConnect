@@ -16,9 +16,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import AddressCard from "./components/AddressCard";
 import AddAddressForm from "./components/AddAddressForm";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import PaginationComponent from "@/components/ui/PaginationComponent";
 
 export default function AddressManager() {
-    const { addresses = [], loading, error, deleteAddress } = useAddress();
+    const [page, setPage] = useState(1);
+    const {
+        addresses = [],
+        meta,
+        loading,
+        error,
+        deleteAddress,
+    } = useAddress(page);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
@@ -89,7 +97,7 @@ export default function AddressManager() {
                                     Total Addresses
                                 </p>
                                 <p className="text-3xl font-bold text-foreground mt-2">
-                                    {addresses.length}
+                                    {meta?.total || 0}
                                 </p>
                             </div>
                             <div className="p-3 rounded-lg bg-primary/10">
@@ -207,6 +215,11 @@ export default function AddressManager() {
                     ))
                 )}
             </div>
+
+            {/* Pagination */}
+            {meta && meta.last_page > 1 && (
+                <PaginationComponent meta={meta} onPageChange={setPage} />
+            )}
 
             <ConfirmationModal
                 open={confirmModal.open}

@@ -1,18 +1,20 @@
 import { axiosClient } from "@/api/axios";
 
 const SweepstarApi = {
-    getAvailableMissions: async () => {
-        return await axiosClient.get("/api/sweepstar/available-missions");
+    getAvailableMissions: async (page = 1) => {
+        return await axiosClient.get(
+            `/api/sweepstar/available-missions?page=${page}`,
+        );
     },
-
-    getMissionsHistory: async () => {
-        return await axiosClient.get("/api/sweepstar/missions-history");
+    getMissionsHistory: async (page = 1, archived = false) => {
+        const url =
+            `/api/sweepstar/missions-history?page=${page}` +
+            (archived ? "&archived=1" : "");
+        return await axiosClient.get(url);
     },
-
     acceptMission: async (bookingId) => {
         return await axiosClient.post(`/api/bookings/${bookingId}/accept`);
     },
-    // Add this function to the object
     completeMission: async (bookingId) => {
         return await axiosClient.post(`/api/bookings/${bookingId}/complete`);
     },

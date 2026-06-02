@@ -1,17 +1,8 @@
-// src/pages/admin/users/UserStatsCards.jsx
 import React from "react";
 import { Users, CheckCircle, Ban, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function UsersStatCards({ users }) {
-    const stats = {
-        total: users.length,
-        active: users.filter((u) => u.status === "active" && !u.deleted_at)
-            .length,
-        suspended: users.filter((u) => u.status === "suspended").length,
-        deleted: users.filter((u) => u.deleted_at).length,
-    };
-
+export default function UsersStatCards({ stats }) {
     const statItems = [
         {
             label: "Total Users",

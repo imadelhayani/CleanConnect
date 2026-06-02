@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\SweepstarProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+
 use Illuminate\Support\Facades\DB;
-use App\Notifications\ApplicationUpdate; // <--- The new class
-use Illuminate\Support\Facades\Notification; // <--- To notify multiple admins
+use App\Notifications\ApplicationUpdate;
+use Illuminate\Support\Facades\Notification;
 
 class SweepstarProfileController extends Controller
 {
@@ -54,16 +54,26 @@ class SweepstarProfileController extends Controller
     /**
      * ADMIN: View all pending applications
      */
-    public function pendingApplications()
-    {
-        // Get profiles where is_verified is FALSE, include User details
-        $applications = SweepstarProfile::where('is_verified', false)
-            ->with('user') // So admin can see name/email
-            ->orderBy('created_at', 'desc')
-            ->get();
+public function pendingApplications()
+{
+    $query = SweepstarProfile::where('is_verified', false)->with('user');
 
-        return response()->json($applications);
-    }
+    $stats = [
+        'total' => (clone $query)->count(),
+        // optional: add more stats if needed
+    ];
+
+    $applications = $query->orderBy('created_at', 'desc')->paginate(15);
+
+    return response()->json([
+        'data' => $applications->items(),
+        'stats' => $stats,
+        'current_page' => $applications->currentPage(),
+        'last_page' => $applications->lastPage(),
+        'per_page' => $applications->perPage(),
+        'total' => $applications->total(),
+    ]);
+}
 
     /**
      * ADMIN: Approve an application

@@ -56,8 +56,8 @@ const ClientApi = {
 
     // --- ADDRESSES ---
     // Get all my addresses
-    getMyAddresses: async () => {
-        return await axiosClient.get("/api/addresses");
+    getMyAddresses: async (page = 1) => {
+        return await axiosClient.get(`/api/addresses?page=${page}`);
     },
     // Add a new address
     addAddress: async (data) => {
@@ -78,8 +78,8 @@ const ClientApi = {
         return await axiosClient.post("/api/bookings", data);
     },
     // Get my booking history
-    getMyBookings: async () => {
-        return await axiosClient.get("/api/bookings");
+    getMyBookings: async (page = 1) => {
+        return await axiosClient.get(`/api/bookings?page=${page}`);
     },
     // Update an existing booking
     updateBooking: async (id, data) => {
