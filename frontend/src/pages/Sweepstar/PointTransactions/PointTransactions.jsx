@@ -16,14 +16,14 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, History, TrendingUp, TrendingDown } from "lucide-react";
+import { History, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import PaginationComponent from "@/components/ui/PaginationComponent";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function PointTransactions() {
     const [page, setPage] = useState(1);
     const { data: paginatedData, isLoading } = usePointTransactions(page);
-
     const transactions = paginatedData?.data ?? [];
     const meta = paginatedData
         ? {
@@ -34,47 +34,27 @@ export default function PointTransactions() {
           }
         : null;
 
-    if (isLoading) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <div className="text-center space-y-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                    <p className="text-muted-foreground text-lg">
-                        Loading transaction history...
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    if (isLoading) return <ContentLoader />;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
-            {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent p-8 md:p-12">
-                <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/15 rounded-full blur-3xl dark:bg-primary/10" />
-                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl dark:bg-primary/5" />
-                <div className="relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
-                        <History className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">
-                            Point Ledger
-                        </span>
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                        Point Transactions
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                        View your credit and debit history. Points are earned
-                        from verified payments or spent when accepting missions.
-                    </p>
+            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                    <History className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Point Ledger</span>
                 </div>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                    Point Transactions
+                </h1>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
+                    View your credit and debit history. Points are earned from
+                    verified payments or spent when accepting missions.
+                </p>
             </div>
-
-            {/* Main Card */}
             <Card className="rounded-xl border-border/60 bg-background/50 backdrop-blur-sm shadow-lg">
                 <CardHeader className="border-b border-border/60 pb-4">
                     <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-primary" />
+                        <TrendingUp className="w-5 h-5 text-primary" />{" "}
                         Transaction History
                     </CardTitle>
                     <CardDescription>
@@ -131,12 +111,12 @@ export default function PointTransactions() {
                                                         {tx.type ===
                                                         "credit" ? (
                                                             <>
-                                                                <TrendingUp className="w-3 h-3" />
+                                                                <TrendingUp className="w-3 h-3" />{" "}
                                                                 Credit
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <TrendingDown className="w-3 h-3" />
+                                                                <TrendingDown className="w-3 h-3" />{" "}
                                                                 Debit
                                                             </>
                                                         )}
@@ -145,8 +125,8 @@ export default function PointTransactions() {
                                                 <TableCell
                                                     className={
                                                         tx.type === "credit"
-                                                            ? "text-green-600 dark:text-green-400 font-semibold"
-                                                            : "text-red-600 dark:text-red-400 font-semibold"
+                                                            ? "text-green-600 font-semibold"
+                                                            : "text-red-600 font-semibold"
                                                     }
                                                 >
                                                     {tx.type === "credit"

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Loader2, AlertCircle, Plus, MapPin, Home, Pencil } from "lucide-react";
-
 import { useAddress } from "@/Hooks/useAddress";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +16,7 @@ import AddressCard from "./components/AddressCard";
 import AddAddressForm from "./components/AddAddressForm";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import PaginationComponent from "@/components/ui/PaginationComponent";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function AddressManager() {
     const [page, setPage] = useState(1);
@@ -27,28 +27,26 @@ export default function AddressManager() {
         error,
         deleteAddress,
     } = useAddress(page);
-
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
     const [deleteError, setDeleteError] = useState(null);
     const [editingAddress, setEditingAddress] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ open: false, id: null });
 
+    if (loading) return <ContentLoader />;
+
     const handleAddNewClick = () => {
         setEditingAddress(null);
         setIsDialogOpen(true);
     };
-
     const handleEditClick = (address) => {
         setEditingAddress(address);
         setIsDialogOpen(true);
     };
-
     const handleDeleteClick = (id) => {
         setConfirmModal({ open: true, id });
         setDeleteError(null);
     };
-
     const handleConfirmDelete = async () => {
         const id = confirmModal.id;
         if (!id) return;
@@ -57,7 +55,6 @@ export default function AddressManager() {
             await deleteAddress(id);
             setConfirmModal({ open: false, id: null });
         } catch (err) {
-            console.error(err);
             setDeleteError("Could not delete address. Please try again.");
             setConfirmModal({ open: false, id: null });
         } finally {
@@ -67,27 +64,18 @@ export default function AddressManager() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
-            {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent p-8 md:p-12">
-                <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/15 rounded-full blur-3xl dark:bg-primary/10" />
-                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl dark:bg-primary/5" />
-                <div className="relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
-                        <Home className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">
-                            Saved Locations
-                        </span>
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                        My Addresses
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                        Manage your saved service locations
-                    </p>
+            <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                    <Home className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Saved Locations</span>
                 </div>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                    My Addresses
+                </h1>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
+                    Manage your saved service locations
+                </p>
             </div>
-
-            {/* Stats Card */}
             {!loading && !error && (
                 <Card className="rounded-xl border-border/60 bg-background/50 backdrop-blur-sm">
                     <CardContent className="p-6">
@@ -107,31 +95,21 @@ export default function AddressManager() {
                     </CardContent>
                 </Card>
             )}
-
-            {/* Delete Error */}
             {deleteError && (
-                <Alert className="border-red-200/60 bg-red-50/50 dark:bg-red-900/20 rounded-lg">
+                <Alert className="border-red-200/60 bg-red-50/50 rounded-lg">
                     <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                        {deleteError}
-                    </AlertDescription>
+                    <AlertDescription>{deleteError}</AlertDescription>
                 </Alert>
             )}
-
-            {/* Add Address Button & Dialog */}
             <div className="flex justify-end">
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button
-                            onClick={handleAddNewClick}
-                            className="gap-2 rounded-lg h-11 px-6 font-semibold bg-gradient-to-r from-primary to-primary/90 hover:shadow-lg"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add New Address
+                        <Button onClick={handleAddNewClick} className="gap-2">
+                            <Plus className="w-4 h-4" /> Add New Address
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[500px] rounded-2xl">
-                        <DialogHeader className="border-b border-border/60 pb-4">
+                        <DialogHeader className="border-b pb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-primary/10">
                                     {editingAddress ? (
@@ -146,7 +124,7 @@ export default function AddressManager() {
                                             ? "Edit Address"
                                             : "Add New Address"}
                                     </DialogTitle>
-                                    <DialogDescription className="mt-1">
+                                    <DialogDescription>
                                         {editingAddress
                                             ? "Update your location details below"
                                             : "Enter your location details below"}
@@ -163,19 +141,10 @@ export default function AddressManager() {
                     </DialogContent>
                 </Dialog>
             </div>
-
-            {/* Address Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {loading ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-20">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="text-muted-foreground text-lg mt-4">
-                            Loading your addresses...
-                        </p>
-                    </div>
-                ) : error ? (
+                {error ? (
                     <div className="col-span-full">
-                        <Alert className="border-red-200/60 bg-red-50/50 rounded-lg">
+                        <Alert className="border-red-200/60 bg-red-50/50">
                             <AlertCircle className="h-4 w-4 text-red-600" />
                             <AlertDescription>
                                 Failed to load addresses. Please try again
@@ -198,8 +167,8 @@ export default function AddressManager() {
                                 onClick={handleAddNewClick}
                                 className="gap-2"
                             >
-                                <Plus className="w-4 h-4" />
-                                Add Your First Address
+                                <Plus className="w-4 h-4" /> Add Your First
+                                Address
                             </Button>
                         </div>
                     </div>
@@ -215,12 +184,9 @@ export default function AddressManager() {
                     ))
                 )}
             </div>
-
-            {/* Pagination */}
             {meta && meta.last_page > 1 && (
                 <PaginationComponent meta={meta} onPageChange={setPage} />
             )}
-
             <ConfirmationModal
                 open={confirmModal.open}
                 onClose={() =>

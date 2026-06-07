@@ -10,13 +10,13 @@ import ReviewModal from "../Review/ReviewModal";
 import EditBookingModal from "./Components/EditBookingModal";
 import CancelBookingModal from "./Components/CancelBookingModal";
 import BookingDetailModal from "./Components/BookingDetailModal";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function BookingHistory() {
     const navigate = useNavigate();
     const location = useLocation();
     const [page, setPage] = useState(1);
     const { data: paginatedData, isLoading } = useMyBookings(page);
-
     const bookings = paginatedData?.data ?? [];
     const stats = paginatedData?.stats ?? {
         total: 0,
@@ -33,7 +33,6 @@ export default function BookingHistory() {
               total: paginatedData.total,
           }
         : null;
-
     const [statusFilter, setStatusFilter] = useState("all");
     const [statusMsg, setStatusMsg] = useState({ type: "", msg: "" });
     const [editingBooking, setEditingBooking] = useState(null);
@@ -48,29 +47,22 @@ export default function BookingHistory() {
         }
     }, [location]);
 
+    if (isLoading) return <ContentLoader />;
+
     const handleSuccess = (msg) => {
         setStatusMsg({ type: "success", msg });
         setEditingBooking(null);
         setReviewingBooking(null);
         setCancellingBooking(null);
     };
-
     const filteredBookings = bookings.filter((b) =>
         statusFilter === "all"
             ? true
             : b.status?.toLowerCase() === statusFilter.toLowerCase(),
     );
 
-    if (isLoading)
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-
     return (
         <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto">
-            {/* Hero Header */}
             <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
                     <History className="w-4 h-4 text-primary" />
@@ -83,7 +75,6 @@ export default function BookingHistory() {
                     Track all your past and upcoming service requests.
                 </p>
             </div>
-
             {statusMsg.msg && (
                 <div className="bg-green-50 border-green-200 text-green-800 p-4 rounded-xl flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" /> {statusMsg.msg}
@@ -115,7 +106,6 @@ export default function BookingHistory() {
             {meta && meta.last_page > 1 && (
                 <PaginationComponent meta={meta} onPageChange={setPage} />
             )}
-
             <BookingDetailModal
                 open={!!viewingBooking}
                 booking={viewingBooking}

@@ -7,11 +7,11 @@ import BookingFilter from "./components/BookingFilter";
 import BookingsTable from "./components/BookingsTable";
 import BookingDetailModal from "./components/BookingDetailModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function BookingManager() {
     const [page, setPage] = useState(1);
     const { data: paginatedData, isLoading } = useAllBookings(page);
-
     const bookings = paginatedData?.data ?? [];
     const stats = paginatedData?.stats ?? {
         total: 0,
@@ -28,7 +28,6 @@ export default function BookingManager() {
               total: paginatedData.total,
           }
         : null;
-
     const editBookingMutation = useEditBooking();
     const [filterStatus, setFilterStatus] = useState("all");
     const [selectedBooking, setSelectedBooking] = useState(null);
@@ -38,11 +37,12 @@ export default function BookingManager() {
         id: null,
     });
 
+    if (isLoading) return <ContentLoader />;
+
     const handleApproveClick = (id) =>
         setConfirmState({ open: true, type: "APPROVE", id });
     const handleRejectClick = (id) =>
         setConfirmState({ open: true, type: "REJECT", id });
-
     const handleFinalConfirmation = async () => {
         const { type, id } = confirmState;
         try {
@@ -69,34 +69,22 @@ export default function BookingManager() {
         filterStatus === "all" ? true : b.status === filterStatus,
     );
 
-    if (isLoading) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">
-            {/* Hero Header */}
             <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
-                <div className="relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
-                        <BarChart3 className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">
-                            Booking Oversight
-                        </span>
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                        Booking Management
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-                        Monitor and manage all client bookings.
-                    </p>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
+                    <BarChart3 className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">
+                        Booking Oversight
+                    </span>
                 </div>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                    Booking Management
+                </h1>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
+                    Monitor and manage all client bookings.
+                </p>
             </div>
-
             <BookingStats stats={stats} />
             <BookingFilter
                 filterStatus={filterStatus}

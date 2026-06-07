@@ -28,6 +28,7 @@ import { getRoleStyles } from "@/utils/roleStyles";
 import UserEditProfileModal from "./components/User/UserEditProfileModal";
 import DeleteAccountModal from "./components/User/DeleteAccountModal";
 import AvatarUpload from "./AvatarUpload";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function UserInfo() {
     const { data: user, isLoading } = useUser();
@@ -44,30 +45,7 @@ export default function UserInfo() {
         setTimeout(() => setCopiedId(false), 2000);
     };
 
-    const handleDelete = () => {
-        if (
-            window.confirm(
-                "ARE YOU SURE? This action cannot be undone. Type 'DELETE' to confirm.",
-            )
-        ) {
-            deleteAccount();
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <div className="flex h-[50vh] items-center justify-center">
-                <div className="text-center space-y-4">
-                    <div className="inline-flex p-3">
-                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                        Loading your profile...
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    if (isLoading) return <ContentLoader />;
 
     if (!user) return null;
 

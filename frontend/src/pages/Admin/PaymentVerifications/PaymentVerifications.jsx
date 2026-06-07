@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/avatarHelper";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function PaymentVerifications() {
     const [activeTab, setActiveTab] = useState("pending");
@@ -30,8 +31,6 @@ export default function PaymentVerifications() {
         isLoading,
         refetch,
     } = usePaymentVerifications(activeTab, page);
-
-    // ✅ Extract data and build meta
     const payments = paginatedData?.data ?? [];
     const meta = paginatedData
         ? {
@@ -41,12 +40,13 @@ export default function PaymentVerifications() {
               total: paginatedData.total,
           }
         : null;
-
     const approveMutation = useApprovePayment();
     const rejectMutation = useRejectPayment();
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [adminNotes, setAdminNotes] = useState("");
     const [actionType, setActionType] = useState(null);
+
+    if (isLoading) return <ContentLoader />;
 
     const handleApprove = (payment) => {
         setSelectedPayment(payment);
@@ -81,13 +81,6 @@ export default function PaymentVerifications() {
         }
     };
 
-    if (isLoading)
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-
     return (
         <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto">
             <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
@@ -104,7 +97,6 @@ export default function PaymentVerifications() {
                     Verify sweepstar top‑ups, approve or reject transactions.
                 </p>
             </div>
-
             <Card className="rounded-xl border-border/60 bg-background/50">
                 <CardHeader>
                     <CardTitle>Verification Queue</CardTitle>
@@ -171,39 +163,36 @@ export default function PaymentVerifications() {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="flex justify-between">
-                                                {payment.status ===
-                                                    "pending" && (
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="text-green-600"
-                                                            onClick={() =>
-                                                                handleApprove(
-                                                                    payment,
-                                                                )
-                                                            }
-                                                        >
-                                                            <CheckCircle className="mr-1 h-4 w-4" />{" "}
-                                                            Approve
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="text-red-600"
-                                                            onClick={() =>
-                                                                handleReject(
-                                                                    payment,
-                                                                )
-                                                            }
-                                                        >
-                                                            <XCircle className="mr-1 h-4 w-4" />{" "}
-                                                            Reject
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
+                                            {payment.status === "pending" && (
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="text-green-600"
+                                                        onClick={() =>
+                                                            handleApprove(
+                                                                payment,
+                                                            )
+                                                        }
+                                                    >
+                                                        <CheckCircle className="mr-1 h-4 w-4" />{" "}
+                                                        Approve
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="text-red-600"
+                                                        onClick={() =>
+                                                            handleReject(
+                                                                payment,
+                                                            )
+                                                        }
+                                                    >
+                                                        <XCircle className="mr-1 h-4 w-4" />{" "}
+                                                        Reject
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -218,7 +207,6 @@ export default function PaymentVerifications() {
                     </Tabs>
                 </CardContent>
             </Card>
-
             <Dialog
                 open={!!selectedPayment}
                 onOpenChange={() => setSelectedPayment(null)}

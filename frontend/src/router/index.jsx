@@ -40,19 +40,12 @@ import PointTransactions from "@/pages/Sweepstar/PointTransactions/PointTransact
 import TopUpPoints from "@/pages/Sweepstar/TopUpPoints/TopUpPoints";
 import PaymentVerifications from "@/pages/Admin/PaymentVerifications/PaymentVerifications";
 import Settings from "@/pages/Admin/Settings/Settings";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 // GuestOnly: redirect logged-in users away from login/signup
 const GuestOnly = ({ children }) => {
     const { data: user, isLoading } = useUser();
-    if (isLoading)
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                    <p className="text-sm text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        );
+    if (isLoading) return <ContentLoader />;
     return user ? <Navigate to="/dashboard" replace /> : children;
 };
 

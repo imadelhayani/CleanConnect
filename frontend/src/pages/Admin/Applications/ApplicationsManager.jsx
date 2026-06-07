@@ -11,6 +11,7 @@ import ApplicationSearch from "./components/ApplicationsSearch";
 import ApplicationsTable from "./components/ApplicationsTable";
 import ApplicationDetailModal from "./components/ApplicationDetailModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function ApplicationManager() {
     const [page, setPage] = useState(1);
@@ -19,7 +20,6 @@ export default function ApplicationManager() {
         isLoading,
         isError,
     } = usePendingApplications(page);
-
     const applications = paginatedData?.data ?? [];
     const stats = paginatedData?.stats ?? { total: 0 };
     const meta = paginatedData
@@ -30,7 +30,6 @@ export default function ApplicationManager() {
               total: paginatedData.total,
           }
         : null;
-
     const approveMutation = useApproveApplication();
     const rejectMutation = useRejectApplication();
     const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +40,12 @@ export default function ApplicationManager() {
         id: null,
         name: null,
     });
+
+    if (isLoading) return <ContentLoader />;
+    if (isError)
+        return (
+            <div className="p-6 text-red-500">Error loading applications</div>
+        );
 
     const filteredApps = applications.filter((app) => {
         const term = searchTerm.toLowerCase();
@@ -64,7 +69,6 @@ export default function ApplicationManager() {
             console.error("Action failed", error);
         }
     };
-
     const avgRate = applications.length
         ? (
               applications.reduce(
@@ -74,17 +78,8 @@ export default function ApplicationManager() {
           ).toFixed(2)
         : "0.00";
 
-    if (isLoading)
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    if (isError) return <div>Error loading applications</div>;
-
     return (
         <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto">
-            {/* Hero Header */}
             <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
                     <UserCheck className="w-4 h-4 text-primary" />

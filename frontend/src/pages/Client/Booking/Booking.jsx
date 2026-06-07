@@ -5,6 +5,7 @@ import { useServices } from "@/Hooks/useServices";
 import { useCreateBooking } from "@/Hooks/useBookings";
 import BookingForm from "./components/BookingForm";
 import SuccessBookingModal from "./components/SuccessBookingModal";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function Booking() {
     const { data: services = [], isLoading: loadingServices } = useServices();
@@ -25,16 +26,7 @@ export default function Booking() {
     }, [addressData]);
 
     if (loadingServices || loadingAddresses) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <div className="text-center space-y-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                    <p className="text-muted-foreground text-lg">
-                        Preparing your booking experience...
-                    </p>
-                </div>
-            </div>
-        );
+        return <ContentLoader />;
     }
 
     const handleFormSubmit = async (formData) => {

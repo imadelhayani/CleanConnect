@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Trophy, Sparkles, Loader2 } from "lucide-react";
+import { Calendar, Trophy } from "lucide-react";
 import { useMissionsHistory } from "@/Hooks/useBookings";
 import PaginationComponent from "@/components/ui/PaginationComponent";
 import MissionHistoryCard from "./components/MissionHistoryCard";
 import EmptyHistoryState from "./components/EmptyHistoryState";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function MissionsHistory() {
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
-    // ✅ Fetch only archived missions (completed/cancelled)
     const { data: paginatedData, isLoading } = useMissionsHistory(page, true);
-
     const jobs = paginatedData?.data ?? [];
     const meta = paginatedData
         ? {
@@ -21,17 +20,10 @@ export default function MissionsHistory() {
               total: paginatedData.total,
           }
         : null;
-
     const archivedCount = paginatedData?.archived_count ?? 0;
     const completedCount = paginatedData?.completed_count ?? 0;
 
-    if (isLoading) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
+    if (isLoading) return <ContentLoader />;
 
     return (
         <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto">
@@ -49,7 +41,6 @@ export default function MissionsHistory() {
                         : `${archivedCount} archived • ${completedCount} successful`}
                 </p>
             </div>
-
             {jobs.length === 0 ? (
                 <EmptyHistoryState
                     onFindJobs={() => navigate("/dashboard/available_missions")}

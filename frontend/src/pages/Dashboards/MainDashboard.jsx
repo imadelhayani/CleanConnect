@@ -7,22 +7,12 @@ import { useUser } from "@/Hooks/useAuth";
 import AdminDashboard from "./Admin/AdminDashboard";
 import SweepstarDashboard from "./Sweepstar/SweepstarDashboard";
 import ClientDashboard from "./Client/ClientDashboard";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function MainDashboard() {
     const { data: user, isLoading } = useUser();
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                    <p className="text-sm text-muted-foreground">
-                        Content is Loading...
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    if (isLoading) return <ContentLoader />;
 
     if (!user) {
         return <Navigate to="/login" replace />;

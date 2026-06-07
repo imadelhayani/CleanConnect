@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 const settingsSchema = z.object({
     booking_acceptance_percentage: z.number().min(0).max(100),
@@ -53,13 +54,7 @@ export default function Settings() {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
+    if (isLoading) return <ContentLoader />;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-6 max-w-7xl mx-auto">

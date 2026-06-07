@@ -10,11 +10,11 @@ import UsersTable from "./components/UsersTable";
 import UserDetailModal from "./components/UserDetailModal";
 import AdminDeleteUserModal from "./components/AdminDeleteUserModal";
 import UserEditProfileModal from "../../SharedComponents/components/User/UserEditProfileModal";
+import { ContentLoader } from "@/components/ui/PageLoader";
 
 export default function UsersManager() {
     const [page, setPage] = useState(1);
     const { data: paginatedData, loading, error, refetch } = useUsers(page);
-
     const users = paginatedData?.data ?? [];
     const stats = paginatedData?.stats ?? {
         total: 0,
@@ -30,23 +30,29 @@ export default function UsersManager() {
               total: paginatedData.total,
           }
         : null;
-
-    const { data: currentUser } = useUser();
-
+    const { data: currentUser, isLoading: isCurrentUserLoading } = useUser();
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [selectedUserForEdit, setSelectedUserForEdit] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
-
     const location = useLocation();
+
     useEffect(() => {
         if (location.state?.openUserId) {
             setSelectedUserId(location.state.openUserId);
             window.history.replaceState({}, document.title);
         }
     }, [location]);
+
+    if (isCurrentUserLoading) return <ContentLoader />;
+    if (error)
+        return (
+            <div className="p-6 text-center text-red-500">
+                Failed to load users.
+            </div>
+        );
 
     const filteredUsers = users.filter((user) => {
         const term = searchTerm.toLowerCase();
@@ -58,22 +64,8 @@ export default function UsersManager() {
         );
     });
 
-    if (loading)
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    if (error)
-        return (
-            <div className="p-6">
-                <AlertCircle /> {error}
-            </div>
-        );
-
     return (
         <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto">
-            {/* Hero Header */}
             <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/12 via-primary/8 to-transparent p-8 md:p-12">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/80 border mb-6">
                     <Users className="w-4 h-4 text-primary" />
@@ -86,7 +78,6 @@ export default function UsersManager() {
                     Manage {meta?.total || 0} registered users
                 </p>
             </div>
-
             <div className="flex justify-end">
                 <RefreshCcw onClick={refetch} className="cursor-pointer" />
             </div>
@@ -111,7 +102,6 @@ export default function UsersManager() {
                     <PaginationComponent meta={meta} onPageChange={setPage} />
                 )}
             </div>
-
             {selectedUserId && (
                 <UserDetailModal
                     userId={selectedUserId}
