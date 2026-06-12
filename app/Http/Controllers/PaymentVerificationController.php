@@ -5,11 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\PaymentVerification;
 use App\Models\Setting;
 use App\Models\PointTransaction;
-use App\Models\SweepstarProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
+use App\Notifications\PaymentVerified;
 
 class PaymentVerificationController extends Controller
 {
@@ -137,6 +135,7 @@ class PaymentVerificationController extends Controller
             $payment->admin_notes = $request->admin_notes;
             $payment->save();
         });
+        $payment->sweepstar->notify(new PaymentVerified($payment, 'approved'));
 
         return response()->json(['message' => 'Payment approved. Points credited.']);
     }
@@ -163,6 +162,7 @@ class PaymentVerificationController extends Controller
                 'admin_notes' => $request->admin_notes,
             ]);
         });
+        $payment->sweepstar->notify(new PaymentVerified($payment, 'rejected'));
 
         return response()->json(['message' => 'Payment rejected.']);
     }

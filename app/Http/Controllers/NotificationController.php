@@ -6,15 +6,16 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    // Get all notifications
+    // Get paginated notifications
     public function index(Request $request)
     {
-        return response()->json([
-            'notifications' => $request->user()->notifications
-        ]);
+        $perPage = $request->get('per_page', 15);
+        $notifications = $request->user()->notifications()->paginate($perPage);
+
+        return response()->json($notifications);
     }
 
-    // Mark specific one
+    // Mark specific notification as read
     public function markAsRead(Request $request, $id)
     {
         $notification = $request->user()->notifications()->where('id', $id)->first();
@@ -24,12 +25,10 @@ class NotificationController extends Controller
         return response()->json(['message' => 'Marked as read']);
     }
 
-    // --- ADD THIS NEW FUNCTION ---
+    // Mark all as read
     public function markAllAsRead(Request $request)
     {
-        // Laravel magic method to mark all unread as read
         $request->user()->unreadNotifications->markAsRead();
-
         return response()->json(['message' => 'All marked as read']);
     }
 }

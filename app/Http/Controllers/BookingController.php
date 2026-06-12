@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\BookingStatusUpdated;
 use Illuminate\Support\Facades\Notification;
-
+use App\Notifications\PointsLowWarning;
 class BookingController extends Controller
 {
     /**
@@ -71,7 +71,7 @@ public function show(Request $request, Booking $booking)
     return response()->json($booking->load([
         'user',
         'address',
-        'sweepstar',  
+        'sweepstar',
         'bookingServices.service',
         'bookingServices.selectedOptions.option',
         'bookingServices.selectedExtras.extra'
@@ -457,6 +457,9 @@ public function missionsHistory(Request $request)
             // Deduct points
             $profile->points_balance -= $requiredPoints;
             $profile->save();
+            if ($profile->points_balance < 10) {
+            $sweepstar->notify(new PointsLowWarning($profile->points_balance));
+                }
 
             // Record transaction
             PointTransaction::create([

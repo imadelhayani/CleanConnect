@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
+use App\Notifications\AccountStatusChanged;
+
 
 class UserController extends Controller
 {
@@ -250,23 +252,27 @@ public function index(Request $request)
      * Admin Changes User Status (Suspend/Activate)
      * SECURITY: Cannot suspend other Admins or themselves.
      */
-    public function adminUpdateStatus(Request $request, $id)
-    {
-        $request->validate(['status' => 'required|in:active,suspended,disabled']);
+public function adminUpdateStatus(Request $request, $id)
+{
+    $request->validate(['status' => 'required|in:active,suspended,disabled']);
 
-        $targetUser = User::findOrFail($id);
+    $targetUser = User::findOrFail($id);
 
-        // 1. SECURITY: Cannot change status of an Admin
-        if ($targetUser->role === 'admin') {
-            return response()->json(['message' => 'You cannot change the status of an Admin.'], 403);
-        }
-
-        // 2. Update Status
-        $targetUser->status = $request->status;
-        $targetUser->save();
-
-        return response()->json(['message' => "User status updated to {$targetUser->status}"]);
+    if ($targetUser->role === 'admin') {
+        return response()->json(['message' => 'You cannot change the status of an Admin.'], 403);
     }
+
+    $oldStatus = $targetUser->status;
+    $targetUser->status = $request->status;
+    $targetUser->save();
+
+    // Notify the user only if status changed to suspended or from suspended to active
+    if ($oldStatus !== $targetUser->status && in_array($targetUser->status, ['suspended', 'active'])) {
+        $targetUser->notify(new AccountStatusChanged($targetUser->status, $request->reason ?? null));
+    }
+
+    return response()->json(['message' => "User status updated to {$targetUser->status}"]);
+}
 
     /**
      * Admin deletes a user

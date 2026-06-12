@@ -7,13 +7,13 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
-    protected function schedule(Schedule $schedule): void
-    {
-        // $schedule->command('inspire')->hourly();
-    }
+   protected $commands = [
+    \App\Console\Commands\SendBookingReminders::class,
+];
+    protected function schedule(Schedule $schedule)
+{
+    $schedule->command('bookings:send-reminders')->dailyAt('09:00');
+}
 
     /**
      * Register the commands for the application.

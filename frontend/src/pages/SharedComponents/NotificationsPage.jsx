@@ -1,15 +1,17 @@
-import React from "react";
-
+import React, { useState } from "react";
 import { Bell, Clock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { NotificationHandlers } from "@/layout/NavBar/NotificationRoutes";
 import { useNotifications } from "@/Hooks/useNotifications";
+import PaginationComponent from "@/components/ui/PaginationComponent";
 
 export default function NotificationsPage() {
-    const { notifications, markRead, markAllRead, isLoading } =
-        useNotifications();
+    const [page, setPage] = useState(1);
+    const { notifications, meta, markRead, markAllRead, isLoading } =
+        useNotifications(page);
+
     const navigate = useNavigate();
 
     const handleNotifClick = (notif) => {
@@ -28,7 +30,7 @@ export default function NotificationsPage() {
                     <CardTitle className="text-2xl font-bold flex items-center gap-2">
                         <Bell className="h-6 w-6" /> Notifications
                     </CardTitle>
-                    {notifications.length > 0 && (
+                    {meta?.total > 0 && (
                         <Button
                             variant="outline"
                             size="sm"
@@ -76,6 +78,12 @@ export default function NotificationsPage() {
                                 </div>
                             </div>
                         ))
+                    )}
+                    {meta && meta.last_page > 1 && (
+                        <PaginationComponent
+                            meta={meta}
+                            onPageChange={setPage}
+                        />
                     )}
                 </CardContent>
             </Card>

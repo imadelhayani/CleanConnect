@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Notification; // <--- CORRECT
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Support\Facades\DB;
+use App\Notifications\WelcomeNotification;
 class RegisteredUserController extends Controller
 {
     /**
@@ -37,6 +37,7 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+        $user->notify(new WelcomeNotification($user));
         $admins = User::where('role', 'admin')->get();
          Notification::send($admins, new RegisterUpdate(
                 "New user registered: " . $user->name,

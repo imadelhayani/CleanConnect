@@ -1,86 +1,101 @@
 import NotificationApi from "@/Services/NotificationApi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-export const useNotifications = () => {
+export const useNotifications = (page = 1, perPage = 15) => {
     const queryClient = useQueryClient();
 
-    // 1. Fetch Notifications
-    const { data: notifications = [], isLoading } = useQuery({
-        queryKey: ["notifications"],
+    // Fetch paginated notifications
+    const { data, isLoading } = useQuery({
+        queryKey: ["notifications", page, perPage],
         queryFn: async () => {
-            const { data } = await NotificationApi.getNotifications();
-            return data.notifications;
+            const { data } = await NotificationApi.getNotifications(
+                page,
+                perPage,
+            );
+            return data; // Laravel pagination object
         },
-        refetchInterval: 30000, // Auto-refresh every 30 seconds
+        refetchInterval: 30000,
     });
 
-    // 2. Mark Single Notification as Read (Optimistic)
+    const notifications = data?.data || [];
+    const meta = data
+        ? {
+              current_page: data.current_page,
+              last_page: data.last_page,
+              per_page: data.per_page,
+              total: data.total,
+          }
+        : null;
+
     const markReadMutation = useMutation({
         mutationFn: NotificationApi.markAsRead,
         onMutate: async (id) => {
-            await queryClient.cancelQueries({ queryKey: ["notifications"] });
-            const previousNotifications = queryClient.getQueryData([
+            await queryClient.cancelQueries({
+                queryKey: ["notifications", page, perPage],
+            });
+            const previousData = queryClient.getQueryData([
                 "notifications",
+                page,
+                perPage,
             ]);
-
-            queryClient.setQueryData(["notifications"], (old) =>
-                old.map((n) =>
-                    n.id === id
-                        ? { ...n, read_at: new Date().toISOString() }
-                        : n,
-                ),
-            );
-
-            return { previousNotifications };
-        },
-        onError: (err, id, context) => {
             queryClient.setQueryData(
-                ["notifications"],
-                context.previousNotifications,
+                ["notifications", page, perPage],
+                (old) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        data: old.data.map((n) =>
+                            n.id === id
+                                ? { ...n, read_at: new Date().toISOString() }
+                                : n,
+                        ),
+                    };
+                },
             );
+            return { previousData };
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
         },
     });
 
-    // 3. Mark All as Read (Optimistic - Fixes the "Long Wait" issue)
     const markAllReadMutation = useMutation({
         mutationFn: NotificationApi.markAllAsRead,
         onMutate: async () => {
-            // Cancel outgoing refetches so they don't overwrite our optimistic update
-            await queryClient.cancelQueries({ queryKey: ["notifications"] });
-
-            // Snapshot the current data
-            const previousNotifications = queryClient.getQueryData([
+            await queryClient.cancelQueries({
+                queryKey: ["notifications", page, perPage],
+            });
+            const previousData = queryClient.getQueryData([
                 "notifications",
+                page,
+                perPage,
             ]);
-
-            // INSTANTLY update the UI to show everything as read
-            queryClient.setQueryData(["notifications"], (old) =>
-                old?.map((n) => ({ ...n, read_at: new Date().toISOString() })),
-            );
-
-            return { previousNotifications };
-        },
-        onError: (err, variables, context) => {
-            // If the server fails, roll back to the previous state
             queryClient.setQueryData(
-                ["notifications"],
-                context.previousNotifications,
+                ["notifications", page, perPage],
+                (old) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        data: old.data.map((n) => ({
+                            ...n,
+                            read_at: new Date().toISOString(),
+                        })),
+                    };
+                },
             );
+            return { previousData };
         },
         onSettled: () => {
-            // Finally, sync with server to ensure data integrity
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
         },
     });
 
     return {
         notifications,
+        meta,
         isLoading,
         unreadCount: notifications.filter((n) => !n.read_at).length,
         markRead: markReadMutation.mutate,
-        markAllRead: markAllReadMutation.mutate, // Changed from mutateAsync to mutate for instant feel
+        markAllRead: markAllReadMutation.mutate,
     };
 };
